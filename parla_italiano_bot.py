@@ -9,6 +9,48 @@ from dotenv import load_dotenv
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+# Encouraging phrases for correct answers
+ENCOURAGING_PHRASES = [
+    "Bravo!",
+    "Perfetto!",
+    "Esatto!",
+    "Bravissimo!",
+    "Ottimo lavoro!",
+    "Ben fatto!",
+    "Complimenti!",
+    "Sei fortissimo!",
+    "Continua così!",
+    "Fantastico!",
+    "Eccellente risposta!",
+    "Proprio giusto!",
+    "Sei un campione!",
+    "Grandioso!",
+    "Impari in fretta!",
+    "Ma dai, sei troppo bravo!",
+    "Non ci credo, risposta perfetta!",
+    "Wow, livello madrelingua!",
+    "Sei il mio studente migliore!"
+]
+
+# Encouraging phrases for incorrect answers
+ERROR_PHRASES = [
+    "Quasi! Ci sei andato vicinissimo.",
+    "Non proprio, ma ci sei quasi!",
+    "Piccolo errore, proviamo ancora?",
+    "Non preoccuparti, è un errore comune.",
+    "Oops! La risposta giusta è…",
+    "Tranquillo, capita a tutti.",
+    "Errore normale.",
+    "Non è esatto, ma stai imparando!",
+    "Dai, riproviamo: sono sicuro che ora ci arrivi!",
+    "Sbagliato di poco, bravissimo lo stesso!",
+    "Nessun problema, gli errori aiutano a imparare.",
+    "Non era questa, ma sei sulla strada giusta!",
+    "Coraggio, un altro tentativo e ce la fai!",
+    "Macché! Però mi piace che ci provi.",
+    "Peccato, era così vicina la risposta giusta!"
+]
+
 # Italian sentences for the game
 ITALIAN_SENTENCES = [
     "Ciao come stai",
@@ -25,7 +67,7 @@ ITALIAN_SENTENCES = [
     "Quanto costa questo libro?",
     "Amo il caffè italiano ogni mattina.",
     "In Italia il sole splende sempre.",
-    "Come si dice “thank you” in italiano?",
+    "Come si dice “please” in italiano?",
     "Domani andiamo al mercato insieme.",
     "La pasta al pomodoro è deliziosa."
 ]
@@ -77,13 +119,13 @@ async def start_new_round(message_or_callback, user_id):
         # It's a callback query
         await message_or_callback.answer()
         await message_or_callback.message.edit_text(
-            f"Disponi queste parole per formare la frase italiana corretta:\n\n",
+            f"Disponi queste parole per formare la frase italiana corretta:",
             reply_markup=keyboard
         )
     else:
         # It's a message
         await message_or_callback.answer(
-            f"Disponi queste parole per formare la frase italiana corretta:\n\n",
+            f"Disponi queste parole per formare la frase italiana corretta:",
             reply_markup=keyboard
         )
 
@@ -111,14 +153,18 @@ async def handle_word_selection(callback: CallbackQuery):
         selected_order = user_game_state[user_id]['selected_words']
         
         if original_words == selected_order:
-            await callback.message.edit_text("Bravo! 🎉 Hai capito bene! Capisco la frase successiva...")
+            # Select a random encouraging phrase
+            phrase = random.choice(ENCOURAGING_PHRASES)
+            await callback.message.edit_text(f"{phrase} 🎉")
             await callback.answer("Corretto!")
         else:
-            await callback.message.edit_text(f"Errore! ❌ L'ordine corretto era: {' '.join(original_words)}\n\nOttenere la frase successiva...")
+            # Select a random error phrase
+            phrase = random.choice(ERROR_PHRASES)
+            await callback.message.edit_text(f"{phrase} ❌ \nL'ordine corretto era: {' '.join(original_words)}")
             await callback.answer("Ordine sbagliato!")
         
         # Start next round after a short delay
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
         await start_new_round(callback.message, user_id)
     else:
         # Create keyboard with remaining buttons
@@ -133,8 +179,8 @@ async def handle_word_selection(callback: CallbackQuery):
         remaining_count = len(user_game_state[user_id]['current_sentence_words']) - len(user_game_state[user_id]['selected_words'])
         
         await callback.message.edit_text(
-            f"Current selection: {selected_sentence}\n"
-            f"Words remaining: {remaining_count}",
+            f"Selezione corrente: {selected_sentence}\n"
+            f"Parole rimanenti: {remaining_count}",
             reply_markup=keyboard
         )
         await callback.answer()
