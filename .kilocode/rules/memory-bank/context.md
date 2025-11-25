@@ -6,7 +6,7 @@ The project is in the initial Proof of Concept phase with basic functionality im
 ## Recent Changes
 - Initial implementation of the word ordering game using aiogram
 - Basic UI with inline keyboard buttons for word selection
-- Static data storage in Python lists
+- Database-driven content storage with PostgreSQL
 - Simple game state management using in-memory dictionary
 - Implement Docker containerization for easy deployment
 - Create deployment scripts for remote hosting

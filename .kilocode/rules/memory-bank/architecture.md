@@ -5,9 +5,25 @@
 ### Current Structure
 ```
 parla_italiano_bot/
-├── parla_italiano_bot.py    # Main bot implementation
-├── requirements.txt         # Python dependencies
-└── .gitignore              # Git ignore rules
+├── src/
+│   ├── __init__.py
+│   ├── bot.py              # Main bot implementation
+│   ├── database.py         # Database operations
+├── tests/
+│   ├── __init__.py
+│   ├── test_bot.py
+│   ├── test_game_logic.py
+├── migrations/
+│   └── 001_initial.sql     # Database schema and initial data
+├── deploy.sh               # Deployment script
+├── docker-compose.yml      # Docker configuration
+├── Dockerfile              # Docker image definition
+├── parla_italiano_bot.jpg  # Project image
+├── README.md               # Project documentation
+├── requirements.txt        # Python dependencies
+├── run_migrations.sh       # Database migration runner
+├── .gitignore              # Git ignore rules
+└── .kilocode/              # Memory bank and rules
 ```
 
 ### Planned Structure
@@ -45,8 +61,13 @@ parla_italiano_bot/
 ### Current Implementation
 - Using aiogram framework for Telegram bot functionality
 - In-memory game state management with dictionary
-- Static data stored in Python lists
-- Simple callback-based word selection mechanism
+- PostgreSQL database for persistent data storage
+- Database-driven content with migration system
+- Docker containerization for deployment
+- Logging system with file output to /logs directory
+- Automated migration execution
+- Modular Python package structure (partial)
+- Testing framework with pytest
 
 ### Planned Implementation
 - PostgreSQL for persistent data storage
@@ -59,10 +80,10 @@ parla_italiano_bot/
 ## Component Relationships
 
 ### Current Components
-1. **Bot Handler**: Processes Telegram messages and callbacks
-2. **Game Logic**: Manages game state and word ordering
-3. **Data Storage**: Static lists of sentences and phrases
-4. **Database Layer**: Handles PostgreSQL operations
+1. **Bot Handler**: Processes Telegram messages and callbacks (src/bot.py)
+2. **Game Logic**: Manages game state and word ordering (in-memory in src/bot.py)
+3. **Data Storage**: PostgreSQL database with tables for sentences and phrases
+4. **Database Layer**: Handles PostgreSQL operations (src/database.py)
 
 ### Planned Components
 1. **Bot Handler**: Processes Telegram messages and callbacks

@@ -5,7 +5,10 @@
 ### Current Stack
 - **Python 3.x**: Primary programming language
 - **aiogram**: Telegram bot framework
+- **asyncpg**: Asynchronous PostgreSQL driver
 - **python-dotenv**: Environment variable management
+- **pytest**: Testing framework
+- **pytest-asyncio**: Async testing support
 - **asyncio**: Asynchronous programming
 
 ### Planned Stack
@@ -18,15 +21,17 @@
 - **asyncpg**: Asynchronous PostgreSQL driver
 - **pytest**: Testing framework
 - **pydantic**: Data validation and serialization
-- **openai/anthropic**: LLM integration for content generation
+- **openai**: LLM integration for content generation
 
 ## Development Setup
 
 ### Current Setup
-- Single Python file implementation
-- Basic requirements.txt for dependencies
-- Environment variables for bot token
-- No formal testing structure
+- Modular Python package structure (partial)
+- Docker container for consistent deployment
+- PostgreSQL database container (via docker-compose)
+- Environment variables for bot token and database
+- Automated testing with pytest
+- Migration system for database schema management
 
 ### Planned Setup
 - Modular Python package structure
@@ -40,10 +45,10 @@
 
 ### Current Constraints
 - In-memory state management (lost on restart)
-- Static content (no dynamic updates)
+- Database-driven content (static updates via migrations)
 - No user authentication
 - Limited error handling
-- No logging system
+- Logging system implemented
 
 ### Planned Constraints
 - PostgreSQL database schema design
@@ -59,6 +64,9 @@
 ```
 aiogram
 python-dotenv
+asyncpg
+pytest
+pytest-asyncio
 ```
 
 ### Planned Dependencies
@@ -81,6 +89,9 @@ docker
 - Simple dictionary for state management
 - Inline keyboard for UI
 - Basic callback handling
+- Async database operations with connection pooling
+- Migration-based database schema management
+- File-based logging with structured output
 
 ### Planned Patterns
 - Repository pattern for database access
