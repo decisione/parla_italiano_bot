@@ -72,51 +72,21 @@ python parla_italiano_bot.py
 - Docker
 - Docker Compose
 
-### Setup with Docker
+### Deployment
 
-1. Build the production image:
+1. Run the script on the development host:
 ```bash
-docker build -f Dockerfile -t parla_italiano_bot:latest .
+./deploy.sh
 ```
 
-2. Save the image for deployment:
+2. Monitor logs if needed (on production host):
 ```bash
-docker save -o parla_italiano_bot.tar parla_italiano_bot:latest
-```
-
-3. Verify image size
-```bash
-docker images parla_italiano_bot
-```
-
-4. Transfer the files to your production server 
-```bash
-scp parla_italiano_bot.tar root@home.lan:/opt/parla_italiano_bot/
-scp docker-compose.yml root@home.lan:/opt/parla_italiano_bot/
-scp .env root@home.lan:/opt/parla_italiano_bot/
-```
-
-5. Load it there:
-```bash
-docker load -i parla_italiano_bot.tar
-```
-
-5. Start the production service:
-```bash
-docker compose -f docker-compose.yml up -d
-```
-
-7. Monitor logs:
-```bash
-docker compose -f docker-compose.yml logs -f
+cd /opt/parla_italiano_bot && docker compose -f docker-compose.yml logs -f
 ```
 
 ## Future Development
 
 The project is planned to evolve with the following features:
-
-### Phase 1: Infrastructure
-- Create deployment scripts for remote hosting (deployment automation)
 
 ### Phase 2: Testing
 - Create test to be run when developing

@@ -8,16 +8,16 @@ The project is in the initial Proof of Concept phase with basic functionality im
 - Basic UI with inline keyboard buttons for word selection
 - Static data storage in Python lists
 - Simple game state management using in-memory dictionary
+- Implement Docker containerization for easy deployment
+- Create deployment scripts for remote hosting
 
 ## Next Steps
-1. Implement Docker containerization for easy deployment
-2. Create deployment scripts for remote hosting
-3. Create test to be run when developing
-4. Create configuration management system using config.ini
-5. Set up PostgreSQL database for persistent storage
-6. Develop user authorization system
-7. Implement LLM integration for dynamic content generation
-8. Add "stories" mode for interactive learning
+- Create test to be run when developing
+- Create configuration management system using config.ini
+- Set up PostgreSQL database for persistent storage
+- Develop user authorization system
+- Implement LLM integration for dynamic content generation
+- Add "stories" mode for interactive learning
 
 ## Development Status
 - Phase: Proof of Concept
