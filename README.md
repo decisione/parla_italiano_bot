@@ -81,7 +81,12 @@ python parla_italiano_bot.py
 
 2. Monitor logs if needed (on production host):
 ```bash
-cd /opt/parla_italiano_bot && docker compose -f docker-compose.yml logs -f
+cd /opt/parla_italiano_bot && docker compose -f docker-compose.yml logs
+```
+
+3. Clean up old images (on production host):
+```bash
+docker image prune
 ```
 
 ## Future Development
