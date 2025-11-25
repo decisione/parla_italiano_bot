@@ -89,12 +89,16 @@ cd /opt/parla_italiano_bot && docker compose -f docker-compose.yml logs
 docker image prune
 ```
 
+## Testing
+
+- Run tests using pytest:
+```bash
+pytest
+```
+
 ## Future Development
 
 The project is planned to evolve with the following features:
-
-### Phase 2: Testing
-- Create test to be run when developing
 
 ### Phase 3: Configuration
 - Configuration management system using config.ini

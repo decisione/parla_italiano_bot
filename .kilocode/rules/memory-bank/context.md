@@ -10,9 +10,9 @@ The project is in the initial Proof of Concept phase with basic functionality im
 - Simple game state management using in-memory dictionary
 - Implement Docker containerization for easy deployment
 - Create deployment scripts for remote hosting
+- Set up pytest testing framework with unit tests for bot functions and game logic
 
 ## Next Steps
-- Create test to be run when developing
 - Create configuration management system using config.ini
 - Set up PostgreSQL database for persistent storage
 - Develop user authorization system

@@ -5,7 +5,7 @@ set -e  # Exit on any error
 # Configuration variables
 PROD_HOST="root@home.lan"
 PROD_PATH="/opt/parla_italiano_bot"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+TIMESTAMP=$(date +%Y%m%d_%H%M)
 IMAGE_NAME="parla_italiano_bot:$TIMESTAMP"
 TAR_FILE="parla_italiano_bot_$TIMESTAMP.tar"
 
@@ -51,6 +51,8 @@ echo "Deploying on production server..."
 ssh $PROD_HOST "cd $PROD_PATH && docker compose down"
 # Load the new image
 ssh $PROD_HOST "cd $PROD_PATH && docker load -i $TAR_FILE"
+# Tag the image as latest
+ssh $PROD_HOST "cd $PROD_PATH && docker tag $IMAGE_NAME parla_italiano_bot:latest"
 # Start the new service
 ssh $PROD_HOST "cd $PROD_PATH && docker compose up -d"
 
