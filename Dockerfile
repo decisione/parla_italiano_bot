@@ -27,4 +27,4 @@ COPY . .
 #EXPOSE 8080
 
 # Set the entrypoint
-ENTRYPOINT ["python", "parla_italiano_bot.py"]
+ENTRYPOINT ["python", "src/bot.py"]

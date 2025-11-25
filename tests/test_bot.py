@@ -1,40 +1,10 @@
 import pytest
-from parla_italiano_bot import (
-    ENCOURAGING_PHRASES,
-    ERROR_PHRASES,
-    ITALIAN_SENTENCES,
-    get_random_sentence,
+import asyncio
+from src.bot import (
     create_word_buttons,
     user_game_state
 )
-
-
-class TestConstants:
-    def test_encouraging_phrases_is_list(self):
-        assert isinstance(ENCOURAGING_PHRASES, list)
-        assert len(ENCOURAGING_PHRASES) > 0
-        assert all(isinstance(phrase, str) for phrase in ENCOURAGING_PHRASES)
-
-    def test_error_phrases_is_list(self):
-        assert isinstance(ERROR_PHRASES, list)
-        assert len(ERROR_PHRASES) > 0
-        assert all(isinstance(phrase, str) for phrase in ERROR_PHRASES)
-
-    def test_italian_sentences_is_list(self):
-        assert isinstance(ITALIAN_SENTENCES, list)
-        assert len(ITALIAN_SENTENCES) > 0
-        assert all(isinstance(sentence, str) for sentence in ITALIAN_SENTENCES)
-
-
-class TestGetRandomSentence:
-    def test_returns_string(self):
-        sentence = get_random_sentence()
-        assert isinstance(sentence, str)
-        assert len(sentence) > 0
-
-    def test_returns_from_list(self):
-        sentence = get_random_sentence()
-        assert sentence in ITALIAN_SENTENCES
+from src.database import get_random_sentence
 
 
 class TestCreateWordButtons:

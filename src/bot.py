@@ -1,23 +1,18 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 import asyncio
-import os
 import random
 import logging
 from dotenv import load_dotenv
-from database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts
+from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# Setup logging
-os.makedirs('/app/logs', exist_ok=True)
-logging.basicConfig(
-    filename='/app/logs/bot.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 # User game state
 user_game_state = {}
@@ -136,6 +131,14 @@ async def echo(message: Message):
 dp.include_router(router)
 
 async def main():
+    # Setup logging
+    os.makedirs('/app/logs', exist_ok=True)
+    logging.basicConfig(
+        filename='/app/logs/bot.log',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+
     logging.info("Bot is starting...")
     logging.info("Connecting to database for init logging...")
 
