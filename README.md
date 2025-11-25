@@ -9,14 +9,23 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 - **Interactive Interface**: Simple and intuitive interface with inline keyboard buttons
 - **Progressive Learning**: Continuously practice with new sentences
 
+## Project Structure
+
+```
+parla_italiano_bot/
+├── parla_italiano_bot.py    # Main bot implementation
+├── requirements.txt         # Python dependencies
+├── .gitignore              # Git ignore rules
+├── README.md               # This file
+└── .env                    # Environment variables (not committed)
+```
+
 ## Installation
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12 or higher
 - Telegram Bot Token
-- (Future) PostgreSQL database
-- (Future) Docker
 
 ### Setup the development environment
 
@@ -42,7 +51,9 @@ pip install -r requirements.txt
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 ```
 
-5. Run the bot:
+### Run in the development environment
+
+- Run the bot:
 ```bash
 python parla_italiano_bot.py
 ```
@@ -54,15 +65,50 @@ python parla_italiano_bot.py
 3. Select words in the correct order to form Italian sentences
 4. Receive feedback on your answers and continue with new sentences
 
-## Project Structure
+## Deployment into production enviroment
 
+### Prerequisites on target host
+
+- Docker
+- Docker Compose
+
+### Setup with Docker
+
+1. Build the production image:
+```bash
+docker build -f Dockerfile -t parla_italiano_bot:latest .
 ```
-parla_italiano_bot/
-├── parla_italiano_bot.py    # Main bot implementation
-├── requirements.txt         # Python dependencies
-├── .gitignore              # Git ignore rules
-├── README.md               # This file
-└── .env                    # Environment variables (not committed)
+
+2. Save the image for deployment:
+```bash
+docker save -o parla_italiano_bot.tar parla_italiano_bot:latest
+```
+
+3. Verify image size
+```bash
+docker images parla_italiano_bot
+```
+
+4. Transfer the files to your production server 
+```bash
+scp parla_italiano_bot.tar root@home.lan:/opt/parla_italiano_bot/
+scp docker-compose.yml root@home.lan:/opt/parla_italiano_bot/
+scp .env root@home.lan:/opt/parla_italiano_bot/
+```
+
+5. Load it there:
+```bash
+docker load -i parla_italiano_bot.tar
+```
+
+5. Start the production service:
+```bash
+docker compose -f docker-compose.yml up -d
+```
+
+7. Monitor logs:
+```bash
+docker compose -f docker-compose.yml logs -f
 ```
 
 ## Future Development
@@ -70,7 +116,6 @@ parla_italiano_bot/
 The project is planned to evolve with the following features:
 
 ### Phase 1: Infrastructure
-- Implement Docker containerization for easy deployment
 - Create deployment scripts for remote hosting (deployment automation)
 
 ### Phase 2: Testing

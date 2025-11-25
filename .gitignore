@@ -1,8 +1,5 @@
 # Sensitive and confidential files
 *.env
-config/config.ini
-config/config.ini.bak
-config/config_copy.ini
 
 # Log files
 logs/
@@ -14,6 +11,10 @@ logs/
 # Binary files
 *.zip
 *.tar
+
+# Docker files
+.dockerignore
+docker-compose.override.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
