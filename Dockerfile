@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose port (not needed for Telegram bot but good practice)
-EXPOSE 8080
+# Expose port (not needed for Telegram bot)
+#EXPOSE 8080
 
 # Set the entrypoint
 ENTRYPOINT ["python", "parla_italiano_bot.py"]
