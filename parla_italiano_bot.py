@@ -5,72 +5,10 @@ import asyncio
 import os
 import random
 from dotenv import load_dotenv
+from database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# Encouraging phrases for correct answers
-ENCOURAGING_PHRASES = [
-    "Bravo!",
-    "Perfetto!",
-    "Esatto!",
-    "Bravissimo!",
-    "Ottimo lavoro!",
-    "Ben fatto!",
-    "Complimenti!",
-    "Sei fortissimo!",
-    "Continua così!",
-    "Fantastico!",
-    "Eccellente risposta!",
-    "Proprio giusto!",
-    "Sei un campione!",
-    "Grandioso!",
-    "Impari in fretta!",
-    "Ma dai, sei troppo bravo!",
-    "Non ci credo, risposta perfetta!",
-    "Wow, livello madrelingua!",
-    "Sei il mio studente migliore!"
-]
-
-# Encouraging phrases for incorrect answers
-ERROR_PHRASES = [
-    "Quasi! Ci sei andato vicinissimo.",
-    "Non proprio, ma ci sei quasi!",
-    "Piccolo errore, proviamo ancora?",
-    "Non preoccuparti, è un errore comune.",
-    "Oops! La risposta giusta è…",
-    "Tranquillo, capita a tutti.",
-    "Errore normale.",
-    "Non è esatto, ma stai imparando!",
-    "Dai, riproviamo: sono sicuro che ora ci arrivi!",
-    "Sbagliato di poco, bravissimo lo stesso!",
-    "Nessun problema, gli errori aiutano a imparare.",
-    "Non era questa, ma sei sulla strada giusta!",
-    "Coraggio, un altro tentativo e ce la fai!",
-    "Macché! Però mi piace che ci provi.",
-    "Peccato, era così vicina la risposta giusta!"
-]
-
-# Italian sentences for the game
-ITALIAN_SENTENCES = [
-    "Ciao come stai",
-    "Buongiorno a tutti",
-    "Mi piace la pizza",
-    "Mi chiamo Luca e studio italiano",
-    "Parlo un po’ di italiano",
-    "Buongiorno, come stai oggi?",
-    "Che bel tempo",
-    "Mi piace l'italiano",
-    "Vorrei ordinare una pizza margherita",
-    "Dove si trova la stazione?",
-    "Posso avere un caffè, per favore?",
-    "Quanto costa questo libro?",
-    "Amo il caffè italiano ogni mattina.",
-    "In Italia il sole splende sempre.",
-    "Come si dice “please” in italiano?",
-    "Domani andiamo al mercato insieme.",
-    "La pasta al pomodoro è deliziosa."
-]
 
 # User game state
 user_game_state = {}
@@ -78,10 +16,6 @@ user_game_state = {}
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
 router = Router()
-
-def get_random_sentence():
-    """Get a random Italian sentence"""
-    return random.choice(ITALIAN_SENTENCES)
 
 def create_word_buttons(shuffled_words):
     """Create buttons for each word using the provided shuffled order"""
@@ -101,7 +35,7 @@ async def start_game(message: Message):
 async def start_new_round(message_or_callback, user_id):
     """Start a new round of the game"""
     # Get random sentence and store original order
-    original_sentence = get_random_sentence()
+    original_sentence = await get_random_sentence()
     words = original_sentence.split()
     random.shuffle(words)  # Shuffle once and store this order
     
@@ -154,12 +88,12 @@ async def handle_word_selection(callback: CallbackQuery):
         
         if original_words == selected_order:
             # Select a random encouraging phrase
-            phrase = random.choice(ENCOURAGING_PHRASES)
+            phrase = await get_random_encouraging_phrase()
             await callback.message.edit_text(f"{phrase} 🎉")
             await callback.answer("Corretto!")
         else:
             # Select a random error phrase
-            phrase = random.choice(ERROR_PHRASES)
+            phrase = await get_random_error_phrase()
             await callback.message.edit_text(f"{phrase} ❌ \nL'ordine corretto era: {' '.join(original_words)}")
             await callback.answer("Ordine sbagliato!")
         

@@ -100,21 +100,17 @@ pytest
 
 The project is planned to evolve with the following features:
 
-### Phase 3: Configuration
+### Configuration
 - Configuration management system using config.ini
 - Folder and file structure refactoring
 
-### Phase 4: Database
-- PostgreSQL database for persistent storage
-- Database migration for existing data
-
-### Phase 5: Authorization
+### Authorization
 - User authorization system
 
-### Phase 6: Replenishment
+### Replenishment
 - LLM integration for dynamic content generation
 
-### Phase 7: Stories
+### Stories
 - Stories mode implementation
 
 ## License

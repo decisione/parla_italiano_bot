@@ -62,29 +62,12 @@ parla_italiano_bot/
 1. **Bot Handler**: Processes Telegram messages and callbacks
 2. **Game Logic**: Manages game state and word ordering
 3. **Data Storage**: Static lists of sentences and phrases
+4. **Database Layer**: Handles PostgreSQL operations
 
 ### Planned Components
 1. **Bot Handler**: Processes Telegram messages and callbacks
 2. **Game Logic**: Manages game state and word ordering
 3. **User Auth**: Handles user authentication and authorization
 4. **Content Manager**: Manages sentences and stories
-5. **Database Layer**: Handles PostgreSQL operations
-6. **Config Manager**: Loads and manages configuration
-7. **LLM Service**: Integrates with language models for content generation
-
-## Critical Implementation Paths
-
-### Phase 1: Infrastructure
-1. Docker containerization
-2. Configuration management system
-3. Database schema design
-
-### Phase 2: Core Features
-1. User authentication system
-2. Database migration for existing data
-3. Game state persistence
-
-### Phase 3: Advanced Features
-1. LLM integration for content generation
-2. Stories mode implementation
-3. Deployment automation
+5. **Config Manager**: Loads and manages configuration
+6. **LLM Service**: Integrates with language models for content generation
