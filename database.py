@@ -45,3 +45,31 @@ async def get_random_error_phrase() -> str:
         return row['phrase'] if row else "Quasi!"  # fallback
     finally:
         await conn.close()
+
+async def get_schema_migrations():
+    """Get all schema migrations for logging"""
+    conn = await asyncpg.connect(
+        host=DB_HOST, port=DB_PORT, database=DB_NAME,
+        user=DB_USER, password=DB_PASSWORD
+    )
+    try:
+        rows = await conn.fetch("SELECT version, applied_at FROM schema_migrations ORDER BY applied_at")
+        return [f"{row['version']} applied at {row['applied_at']}" for row in rows]
+    finally:
+        await conn.close()
+
+async def get_table_counts():
+    """Get row counts for all content tables"""
+    conn = await asyncpg.connect(
+        host=DB_HOST, port=DB_PORT, database=DB_NAME,
+        user=DB_USER, password=DB_PASSWORD
+    )
+    try:
+        counts = {}
+        tables = ['italian_sentences', 'encouraging_phrases', 'error_phrases']
+        for table in tables:
+            row = await conn.fetchrow(f"SELECT COUNT(*) as count FROM {table}")
+            counts[table] = row['count']
+        return counts
+    finally:
+        await conn.close()

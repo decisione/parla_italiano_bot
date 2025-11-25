@@ -4,11 +4,20 @@ from aiogram.types import Message, CallbackQuery
 import asyncio
 import os
 import random
+import logging
 from dotenv import load_dotenv
-from database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase
+from database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+# Setup logging
+os.makedirs('/app/logs', exist_ok=True)
+logging.basicConfig(
+    filename='/app/logs/bot.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # User game state
 user_game_state = {}
@@ -127,7 +136,20 @@ async def echo(message: Message):
 dp.include_router(router)
 
 async def main():
-    print("Bot is starting...")
+    logging.info("Bot is starting...")
+    logging.info("Connecting to database for init logging...")
+
+    # Log schema migrations
+    migrations = await get_schema_migrations()
+    for migration in migrations:
+        logging.info(f"Schema migration: {migration}")
+
+    # Log table counts
+    counts = await get_table_counts()
+    for table, count in counts.items():
+        logging.info(f"Table {table}: {count} rows")
+
+    logging.info("Starting polling...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

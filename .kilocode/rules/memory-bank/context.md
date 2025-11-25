@@ -16,6 +16,7 @@ The project is in the initial Proof of Concept phase with basic functionality im
 - Set up automated migration execution for development and production environments
 - Implement database layer in Python using asyncpg
 - Update bot code to use database instead of static lists
+- Implement logging system with file output to /logs directory, timestamps, and init logging of database state
 
 ## Next Steps
 - Create configuration management system using config.ini

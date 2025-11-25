@@ -4,6 +4,9 @@ FROM python:3.12-slim-bullseye
 # Set the working directory
 WORKDIR /app
 
+# Create logs directory
+RUN mkdir -p /app/logs
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

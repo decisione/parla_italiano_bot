@@ -30,6 +30,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./.env:/app/.env:ro
+      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
