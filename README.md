@@ -70,23 +70,27 @@ parla_italiano_bot/
 The project is planned to evolve with the following features:
 
 ### Phase 1: Infrastructure
-- Docker containerization
-- Deployment automation
+- Implement Docker containerization for easy deployment
+- Create deployment scripts for remote hosting (deployment automation)
 
-### Phase 2: Configuration
-- Configuration management system
+### Phase 2: Testing
+- Create test to be run when developing
 
-### Phase 3: Database
-- PostgreSQL database integration
+### Phase 3: Configuration
+- Configuration management system using config.ini
+- Folder and file structure refactoring
+
+### Phase 4: Database
+- PostgreSQL database for persistent storage
 - Database migration for existing data
 
-### Phase 4: Authentication
-- User authentication system
+### Phase 5: Authorization
+- User authorization system
 
-### Phase 5: Replenishment
+### Phase 6: Replenishment
 - LLM integration for dynamic content generation
 
-### Phase 6: Stories
+### Phase 7: Stories
 - Stories mode implementation
 
 ## License
