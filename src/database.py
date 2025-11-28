@@ -11,15 +11,17 @@ DB_NAME = os.getenv("DB_NAME", "parla_italiano")
 DB_USER = os.getenv("DB_USER", "parla_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-async def get_random_sentence() -> str:
-    """Get a random Italian sentence from the database"""
+async def get_random_sentence() -> tuple[int | None, str]:
+    """Get a random Italian sentence ID and text from the database"""
     conn = await asyncpg.connect(
         host=DB_HOST, port=DB_PORT, database=DB_NAME,
         user=DB_USER, password=DB_PASSWORD
     )
     try:
-        row = await conn.fetchrow("SELECT sentence FROM italian_sentences ORDER BY RANDOM() LIMIT 1")
-        return row['sentence'] if row else "Ciao come stai"  # fallback
+        row = await conn.fetchrow("SELECT id, sentence FROM italian_sentences ORDER BY RANDOM() LIMIT 1")
+        if row:
+            return row['id'], row['sentence']
+        return None, "Ciao come stai"  # fallback
     finally:
         await conn.close()
 
@@ -67,7 +69,7 @@ async def get_table_counts():
     )
     try:
         counts = {}
-        tables = ['italian_sentences', 'encouraging_phrases', 'error_phrases', 'users']
+        tables = ['italian_sentences', 'encouraging_phrases', 'error_phrases', 'users', 'italian_sentences_results']
         for table in tables:
             row = await conn.fetchrow(f"SELECT COUNT(*) as count FROM {table}")
             counts[table] = row['count']
@@ -105,5 +107,20 @@ async def get_or_create_user(user: User) -> int:
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
             """, user.id, user.first_name, user.last_name, user.username, user.language_code, user.is_bot, user.is_premium)
         return user.id
+    finally:
+        await conn.close()
+
+
+async def store_sentence_result(user_id: int, sentence_id: int, is_success: bool) -> None:
+    """Store a sentence result for a user"""
+    conn = await asyncpg.connect(
+        host=DB_HOST, port=DB_PORT, database=DB_NAME,
+        user=DB_USER, password=DB_PASSWORD
+    )
+    try:
+        await conn.execute("""
+            INSERT INTO italian_sentences_results (user_id, italian_sentence_id, is_success)
+            VALUES ($1, $2, $3)
+        """, user_id, sentence_id, is_success)
     finally:
         await conn.close()

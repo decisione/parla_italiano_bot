@@ -9,7 +9,7 @@ import asyncio
 import random
 import logging
 from dotenv import load_dotenv
-from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts, get_or_create_user
+from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts, get_or_create_user, store_sentence_result
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -40,11 +40,12 @@ async def start_game(message: Message):
 async def start_new_round(message_or_callback, user_id):
     """Start a new round of the game"""
     # Get random sentence and store original order
-    original_sentence = await get_random_sentence()
+    sentence_id, original_sentence = await get_random_sentence()
     words = original_sentence.split()
     random.shuffle(words)  # Shuffle once and store this order
     
     user_game_state[user_id] = {
+        'sentence_id': sentence_id,
         'original_sentence': original_sentence,
         'selected_words': [],
         'current_sentence_words': original_sentence.split(),
@@ -106,6 +107,11 @@ async def handle_word_selection(callback: CallbackQuery):
             emoji = random.choice(emojis)
             await callback.message.edit_text(f"{emoji} {phrase}\n{' '.join(original_words)}")
             await callback.answer("Ordine sbagliato!")
+        
+        # Store the result
+        sentence_id = user_game_state[user_id]['sentence_id']
+        if sentence_id is not None:
+            await store_sentence_result(user_id, sentence_id, original_words == selected_order)
         
         # Start next round after a short delay
         await asyncio.sleep(1)

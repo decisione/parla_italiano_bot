@@ -4,7 +4,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from aiogram.types import User
-from src.database import get_or_create_user, get_table_counts
+from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -14,8 +14,8 @@ def event_loop():
 
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
-async def test_get_table_counts_includes_users(mock_connect):
-    """Test get_table_counts includes 'users' and fetches count."""
+async def test_get_table_counts_all_tables(mock_connect):
+    """Test get_table_counts includes all content tables including results."""
     mock_conn = AsyncMock()
     
     # Set up fetchrow to return dictionaries with count values
@@ -23,7 +23,8 @@ async def test_get_table_counts_includes_users(mock_connect):
         {'count': 10},    # italian_sentences
         {'count': 20},    # encouraging_phrases
         {'count': 15},    # error_phrases
-        {'count': 42}     # users
+        {'count': 42},    # users
+        {'count': 5}      # italian_sentences_results
     ]
     
     # Set up the connection mock to be returned by asyncpg.connect()
@@ -32,8 +33,11 @@ async def test_get_table_counts_includes_users(mock_connect):
     counts = await get_table_counts()
     assert 'users' in counts
     assert counts['users'] == 42
-    assert mock_conn.fetchrow.call_count == 4
+    assert 'italian_sentences_results' in counts
+    assert counts['italian_sentences_results'] == 5
+    assert mock_conn.fetchrow.call_count == 5
     mock_conn.fetchrow.assert_any_call("SELECT COUNT(*) as count FROM users")
+    mock_conn.fetchrow.assert_any_call("SELECT COUNT(*) as count FROM italian_sentences_results")
 
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
@@ -70,3 +74,60 @@ async def test_get_or_create_user_existing_update(mock_connect):
     assert call_args[1] == 12345  # user.id
     assert call_args[2] == "UpdatedTest"  # user.first_name
     assert call_args[4] == "testuser"  # user.username
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_random_sentence_returns_id_and_text(mock_connect):
+    """Test get_random_sentence returns (id, sentence) tuple."""
+    mock_conn = AsyncMock()
+    mock_conn.fetchrow.return_value = {'id': 123, 'sentence': 'Test sentence'}
+    mock_connect.return_value = mock_conn
+
+    result = await get_random_sentence()
+    assert isinstance(result, tuple)
+    assert result == (123, 'Test sentence')
+    mock_conn.fetchrow.assert_called_once_with("SELECT id, sentence FROM italian_sentences ORDER BY RANDOM() LIMIT 1")
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_random_sentence_fallback(mock_connect):
+    """Test get_random_sentence fallback when no rows."""
+    mock_conn = AsyncMock()
+    mock_conn.fetchrow.return_value = None
+    mock_connect.return_value = mock_conn
+
+    result = await get_random_sentence()
+    assert result == (None, "Ciao come stai")
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_store_sentence_result(mock_connect):
+    """Test store_sentence_result inserts correctly."""
+    mock_conn = AsyncMock()
+    mock_connect.return_value = mock_conn
+
+    await store_sentence_result(12345, 678, True)
+
+    mock_conn.execute.assert_called_once()
+    args = mock_conn.execute.call_args[0]
+    query = args[0]
+    params = args[1:]
+    assert "INSERT INTO italian_sentences_results" in query
+    assert params == (12345, 678, True)
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_store_sentence_result_false(mock_connect):
+    """Test store_sentence_result with failure."""
+    mock_conn = AsyncMock()
+    mock_connect.return_value = mock_conn
+
+    await store_sentence_result(12345, 678, False)
+
+    mock_conn.execute.assert_called_once()
+    args = mock_conn.execute.call_args[0]
+    query = args[0]
+    params = args[1:]
+    assert params == (12345, 678, False)
