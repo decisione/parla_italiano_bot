@@ -1,8 +1,14 @@
 import asyncpg
 import asyncio
 import os
+import re
+import logging
+from typing import List
 from dotenv import load_dotenv
 from aiogram.types import User
+import pydantic
+from openai import OpenAI
+import instructor
 
 load_dotenv()
 
@@ -11,6 +17,14 @@ DB_PORT = int(os.getenv("DB_PORT", 5432))
 DB_NAME = os.getenv("DB_NAME", "parla_italiano")
 DB_USER = os.getenv("DB_USER", "parla_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# Configuration for OpenAI API
+API_URL = "https://openrouter.ai/api/v1"
+API_KEY = os.getenv("API_KEY")
+MODEL_NAME = "qwen/qwen3-235b-a22b:free"
+
+# Italian character set including accented vowels
+ITALIAN_CHARACTERS = set('abcdefghilmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
 
 # SETUP
 
@@ -164,7 +178,128 @@ async def store_sentence_result(user_id: int, sentence_id: int, is_success: bool
         await conn.close()
 
 
+# Pydantic model for structured output
+class SentenceList(pydantic.BaseModel):
+    sentences: List[str]
+
+def is_valid_italian_sentence(sentence: str) -> bool:
+    """
+    Validate that a sentence:
+    1. Contains only Italian letters (including accented characters)
+    2. Has between 3 and 10 words
+    """
+    # Check word count
+    word_count = len(sentence.split())
+    if word_count < 3 or word_count > 10:
+        return False
+    
+    # Check character set
+    sentence_lower = sentence.lower()
+    for char in sentence_lower:
+        if char not in ITALIAN_CHARACTERS:
+            return False
+    
+    return True
+
+def clean_sentence(sentence: str) -> str:
+    """Clean and normalize sentence"""
+    # Remove extra whitespace and normalize
+    return ' '.join(sentence.strip().split())
+
 async def sentence_replenishment(user_id: int) -> None:
-    """Placeholder for sentence replenishment (1 min delay)."""
-    await asyncio.sleep(60)
-    # TODO: Implement actual sentence replenishment logic
+    """Generate Italian sentences using OpenAI API and store them in the database"""
+    logging.info(f"Starting sentence replenishment for user {user_id}")
+    
+    # Check if API key is available
+    if not API_KEY:
+        logging.error("API_KEY not found in environment variables, cannot generate sentences")
+        return
+    
+    try:
+        # Initialize OpenAI client with instructor patch
+        client = instructor.patch(OpenAI(base_url=API_URL, api_key=API_KEY))
+        
+        # System prompt to guide the LLM
+        system_prompt = """Generate Italian sentences for language learning.
+Each sentence should:
+- Be in Italian (not translated from English)
+- Contain 3 to 10 words
+- Be grammatically correct
+- Use various and different topics
+- Use standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
+
+Examples of appropriate sentences:
+- "A che ora è la tua lezione?"
+- "Mangiamo insieme stasera a cena."
+- "Dove abiti in Italia?"
+
+Please generate exactly 10 sentences in the format requested."""
+        
+        logging.info(f"Connecting to OpenAI API for user {user_id}")
+        logging.info(f"Using model: {MODEL_NAME}")
+        logging.info("Generating Italian sentences...")
+        
+        # Call the LLM with structured output
+        response: SentenceList = client.chat.completions.create(
+            model=MODEL_NAME,
+            response_model=SentenceList,
+            messages=[
+                {"role": "system", "content": system_prompt},
+            ]
+        )
+        
+        logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
+        
+        # Validate and clean sentences
+        valid_sentences = []
+        invalid_sentences = []
+        
+        for i, sentence in enumerate(response.sentences, 1):
+            cleaned = clean_sentence(sentence)
+            
+            if is_valid_italian_sentence(cleaned):
+                valid_sentences.append(cleaned)
+                logging.debug(f"Valid sentence {i}: '{cleaned}'")
+            else:
+                invalid_sentences.append((i, cleaned))
+                word_count = len(cleaned.split())
+                logging.debug(f"Invalid sentence {i}: '{cleaned}'")
+        
+        logging.info(f"Validation Results for user {user_id}:")
+        logging.info(f"Valid sentences: {len(valid_sentences)}")
+        logging.info(f"Invalid sentences: {len(invalid_sentences)}")
+        
+        if invalid_sentences:
+            logging.info("Invalid sentences details:")
+            for i, sentence in invalid_sentences:
+                logging.info(f"  Sentence {i}: '{sentence}'")
+        
+        # Store valid sentences in the database
+        if valid_sentences:
+            conn = await asyncpg.connect(
+                host=DB_HOST, port=DB_PORT, database=DB_NAME,
+                user=DB_USER, password=DB_PASSWORD
+            )
+            try:
+                for sentence in valid_sentences:
+                    # Check if sentence already exists to avoid duplicates
+                    existing = await conn.fetchrow(
+                        "SELECT id FROM italian_sentences WHERE sentence = $1",
+                        sentence
+                    )
+                    if not existing:
+                        await conn.execute(
+                            "INSERT INTO italian_sentences (sentence) VALUES ($1)",
+                            sentence
+                        )
+                        logging.debug(f"Added sentence to database: '{sentence}'")
+                    else:
+                        logging.debug(f"Skipped duplicate sentence: '{sentence}'")
+                
+                logging.info(f"Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
+                
+            finally:
+                await conn.close()
+        
+    except Exception as e:
+        logging.error(f"Error generating sentences for user {user_id}: {e}")
