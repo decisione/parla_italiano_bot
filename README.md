@@ -9,17 +9,6 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 - **Interactive Interface**: Simple and intuitive interface with inline keyboard buttons
 - **Progressive Learning**: Continuously practice with new sentences
 
-## Project Structure
-
-```
-parla_italiano_bot/
-├── parla_italiano_bot.py    # Main bot implementation
-├── requirements.txt         # Python dependencies
-├── .gitignore              # Git ignore rules
-├── README.md               # This file
-└── .env                    # Environment variables (not committed)
-```
-
 ## Installation
 
 ### Prerequisites
@@ -102,7 +91,6 @@ The project is planned to evolve with the following features:
 
 ### Configuration
 - Configuration management system using config.ini
-- Folder and file structure refactoring
 
 ### Authorization
 - User authorization system
