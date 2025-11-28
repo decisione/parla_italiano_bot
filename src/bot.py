@@ -95,14 +95,14 @@ async def handle_word_selection(callback: CallbackQuery):
             phrase = await get_random_encouraging_phrase()
             emojis = ["🎉", "✅", "💣", "💥", "🥳", "🎆", "🎇", "➕", "🤩", "😎", "🥳", "💪", "👍", "🎈", "🎯", "🥇", "🏅", "🎖️", "🏆"]
             emoji = random.choice(emojis)
-            await callback.message.edit_text(f"{emoji} {phrase}\n{original_words}")
+            await callback.message.edit_text(f"{emoji} {phrase}\n{' '.join(original_words)}")
             await callback.answer("Corretto!")
         else:
             # Select a random error phrase
             phrase = await get_random_error_phrase()
             emojis = ["❌", "✖️", "⚠️", "⁉️", "🆘", "🚫", "📛", "🛑", "⛔", "🌩️", "🪫", "🩻", "🧱", "🤚", "👎", "😞", "😪", "😣", "🥲"]
             emoji = random.choice(emojis)
-            await callback.message.edit_text(f"{emoji} {phrase}\n{original_words}")
+            await callback.message.edit_text(f"{emoji} {phrase}\n{' '.join(original_words)}")
             await callback.answer("Ordine sbagliato!")
         
         # Start next round after a short delay
