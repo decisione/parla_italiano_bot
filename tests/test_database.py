@@ -79,12 +79,12 @@ async def test_get_or_create_user_existing_update(mock_connect):
 async def test_get_random_sentence_prefer_uncompleted(mock_connect):
     """Test get_random_sentence prefers uncompleted sentences."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow.side_effect = [{'id': 123, 'sentence': 'Test uncompleted sentence'}]
+    mock_conn.fetchrow.side_effect = [{'unused_count': 15}, {'id': 123, 'sentence': 'Test uncompleted sentence'}]
     mock_connect.return_value = mock_conn
 
     result = await get_random_sentence(123)
     assert result == (123, 'Test uncompleted sentence')
-    assert mock_conn.fetchrow.call_count == 1
+    assert mock_conn.fetchrow.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -92,12 +92,12 @@ async def test_get_random_sentence_prefer_uncompleted(mock_connect):
 async def test_get_random_sentence_fallback_to_random(mock_connect):
     """Test fallback to random sentence when no uncompleted available."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow.side_effect = [None, {'id': 456, 'sentence': 'Fallback sentence'}]
+    mock_conn.fetchrow.side_effect = [{'unused_count': 15}, None, {'id': 456, 'sentence': 'Fallback sentence'}]
     mock_connect.return_value = mock_conn
 
     result = await get_random_sentence(123)
     assert result == (456, 'Fallback sentence')
-    assert mock_conn.fetchrow.call_count == 2
+    assert mock_conn.fetchrow.call_count == 3
 
 
 @pytest.mark.asyncio
@@ -105,12 +105,12 @@ async def test_get_random_sentence_fallback_to_random(mock_connect):
 async def test_get_random_sentence_no_sentences(mock_connect):
     """Test fallback when no sentences at all."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow.side_effect = [None, None]
+    mock_conn.fetchrow.side_effect = [{'unused_count': 15}, None, None]
     mock_connect.return_value = mock_conn
 
     result = await get_random_sentence(123)
     assert result == (None, "Ciao come stai")
-    assert mock_conn.fetchrow.call_count == 2
+    assert mock_conn.fetchrow.call_count == 3
 
 
 @pytest.mark.asyncio

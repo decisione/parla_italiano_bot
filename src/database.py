@@ -1,4 +1,5 @@
 import asyncpg
+import asyncio
 import os
 from dotenv import load_dotenv
 from aiogram.types import User
@@ -18,6 +19,18 @@ async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
         user=DB_USER, password=DB_PASSWORD
     )
     try:
+        # Check remaining uncompleted count for replenishment
+        count_row = await conn.fetchrow("""
+            SELECT COUNT(*) as unused_count FROM italian_sentences
+            WHERE id NOT IN (
+                SELECT italian_sentence_id FROM italian_sentences_results
+                WHERE user_id = $1 AND is_success = true
+            )
+        """, user_id)
+        unused_count = count_row['unused_count'] if count_row else 0
+        if unused_count < 10:
+            asyncio.create_task(sentence_replenishment(user_id))
+
         # Prefer sentences not successfully completed by this user
         row = await conn.fetchrow("""
             SELECT id, sentence FROM italian_sentences
@@ -122,6 +135,12 @@ async def get_or_create_user(user: User) -> int:
         return user.id
     finally:
         await conn.close()
+
+
+async def sentence_replenishment(user_id: int) -> None:
+    """Placeholder for sentence replenishment (1 min delay)."""
+    await asyncio.sleep(60)
+    # TODO: Implement actual sentence replenishment logic
 
 
 async def store_sentence_result(user_id: int, sentence_id: int, is_success: bool) -> None:
