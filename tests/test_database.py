@@ -4,7 +4,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from aiogram.types import User
-from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result
+from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result, is_valid_italian_sentence
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -144,3 +144,60 @@ async def test_store_sentence_result_false(mock_connect):
     query = args[0]
     params = args[1:]
     assert params == (12345, 678, False)
+
+
+def test_is_valid_italian_sentence_valid():
+    """Test valid Italian sentences."""
+    # Valid sentences with no duplicate words
+    assert is_valid_italian_sentence("Ciao come stai") == True
+    assert is_valid_italian_sentence("A che ora è la tua lezione?") == True
+    assert is_valid_italian_sentence("Mangiamo insieme stasera a cena") == True
+    assert is_valid_italian_sentence("Dove abiti in Italia?") == True
+    assert is_valid_italian_sentence("Il gatto è sul tetto") == True
+    assert is_valid_italian_sentence("Buongiorno signora Maria") == True
+
+
+def test_is_valid_italian_sentence_duplicate_words():
+    """Test invalid sentences with duplicate words."""
+    # Sentences with duplicate words should be invalid
+    assert is_valid_italian_sentence("Ciao come stai stai") == False
+    assert is_valid_italian_sentence("A che ora è la lezione la") == False
+    assert is_valid_italian_sentence("Mangiamo insieme insieme a cena") == False
+    assert is_valid_italian_sentence("Dove abiti in in Italia?") == False
+    assert is_valid_italian_sentence("Il gatto è sul gatto") == False
+
+
+def test_is_valid_italian_sentence_word_count():
+    """Test word count validation."""
+    # Too few words
+    assert is_valid_italian_sentence("Ciao") == False
+    assert is_valid_italian_sentence("Ciao come") == False
+    
+    # Too many words
+    assert is_valid_italian_sentence("Uno due tre quattro cinque sei sette otto nove dieci undici") == False
+    
+    # Boundary cases
+    assert is_valid_italian_sentence("Tre parole qui") == True
+    assert is_valid_italian_sentence("Una due tre quattro cinque sei sette otto nove dieci") == True
+
+
+def test_is_valid_italian_sentence_invalid_characters():
+    """Test sentences with invalid characters."""
+    # English words
+    assert is_valid_italian_sentence("Hello world questo non è valido") == False
+    
+    # Special characters not in Italian set
+    assert is_valid_italian_sentence("Ciao@come#stai") == False
+    assert is_valid_italian_sentence("Ciao$come%stai") == False
+    
+    # Valid accented characters should pass
+    assert is_valid_italian_sentence("Ciao come stai?") == True
+    assert is_valid_italian_sentence("A che ora è la tua lezione?") == True
+    assert is_valid_italian_sentence("Dove abiti in Italia?") == True
+
+
+def test_is_valid_italian_sentence_case_insensitive_duplicates():
+    """Test that duplicate word detection is case insensitive."""
+    assert is_valid_italian_sentence("Ciao come stai CIAO") == False
+    assert is_valid_italian_sentence("A che ora è la tua lezione A") == False
+    assert is_valid_italian_sentence("Mangiamo insieme Mangiamo a cena") == False

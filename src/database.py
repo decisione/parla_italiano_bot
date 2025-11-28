@@ -189,10 +189,16 @@ def is_valid_italian_sentence(sentence: str) -> bool:
     Validate that a sentence:
     1. Contains only Italian letters (including accented characters)
     2. Has between 3 and 10 words
+    3. Does not contain duplicate words
     """
     # Check word count
     word_count = len(sentence.split())
     if word_count < 3 or word_count > 10:
+        return False
+    
+    # Check for duplicate words
+    words = sentence.lower().split()
+    if len(words) != len(set(words)):
         return False
     
     # Check character set
