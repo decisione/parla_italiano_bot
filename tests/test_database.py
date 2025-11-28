@@ -76,28 +76,41 @@ async def test_get_or_create_user_existing_update(mock_connect):
     assert call_args[4] == "testuser"  # user.username
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
-async def test_get_random_sentence_returns_id_and_text(mock_connect):
-    """Test get_random_sentence returns (id, sentence) tuple."""
+async def test_get_random_sentence_prefer_uncompleted(mock_connect):
+    """Test get_random_sentence prefers uncompleted sentences."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow.return_value = {'id': 123, 'sentence': 'Test sentence'}
+    mock_conn.fetchrow.side_effect = [{'id': 123, 'sentence': 'Test uncompleted sentence'}]
     mock_connect.return_value = mock_conn
 
-    result = await get_random_sentence()
-    assert isinstance(result, tuple)
-    assert result == (123, 'Test sentence')
-    mock_conn.fetchrow.assert_called_once_with("SELECT id, sentence FROM italian_sentences ORDER BY RANDOM() LIMIT 1")
+    result = await get_random_sentence(123)
+    assert result == (123, 'Test uncompleted sentence')
+    assert mock_conn.fetchrow.call_count == 1
 
 
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
-async def test_get_random_sentence_fallback(mock_connect):
-    """Test get_random_sentence fallback when no rows."""
+async def test_get_random_sentence_fallback_to_random(mock_connect):
+    """Test fallback to random sentence when no uncompleted available."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow.return_value = None
+    mock_conn.fetchrow.side_effect = [None, {'id': 456, 'sentence': 'Fallback sentence'}]
     mock_connect.return_value = mock_conn
 
-    result = await get_random_sentence()
+    result = await get_random_sentence(123)
+    assert result == (456, 'Fallback sentence')
+    assert mock_conn.fetchrow.call_count == 2
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_random_sentence_no_sentences(mock_connect):
+    """Test fallback when no sentences at all."""
+    mock_conn = AsyncMock()
+    mock_conn.fetchrow.side_effect = [None, None]
+    mock_connect.return_value = mock_conn
+
+    result = await get_random_sentence(123)
     assert result == (None, "Ciao come stai")
+    assert mock_conn.fetchrow.call_count == 2
 
 
 @pytest.mark.asyncio

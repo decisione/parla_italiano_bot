@@ -40,7 +40,7 @@ async def start_game(message: Message):
 async def start_new_round(message_or_callback, user_id):
     """Start a new round of the game"""
     # Get random sentence and store original order
-    sentence_id, original_sentence = await get_random_sentence()
+    sentence_id, original_sentence = await get_random_sentence(user_id)
     words = original_sentence.split()
     random.shuffle(words)  # Shuffle once and store this order
     

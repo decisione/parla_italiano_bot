@@ -11,13 +11,26 @@ DB_NAME = os.getenv("DB_NAME", "parla_italiano")
 DB_USER = os.getenv("DB_USER", "parla_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-async def get_random_sentence() -> tuple[int | None, str]:
-    """Get a random Italian sentence ID and text from the database"""
+async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
+    """Get a random Italian sentence ID and text from the database, preferring sentences the user has not successfully completed"""
     conn = await asyncpg.connect(
         host=DB_HOST, port=DB_PORT, database=DB_NAME,
         user=DB_USER, password=DB_PASSWORD
     )
     try:
+        # Prefer sentences not successfully completed by this user
+        row = await conn.fetchrow("""
+            SELECT id, sentence FROM italian_sentences
+            WHERE id NOT IN (
+                SELECT italian_sentence_id FROM italian_sentences_results
+                WHERE user_id = $1 AND is_success = true
+            )
+            ORDER BY RANDOM() LIMIT 1
+        """, user_id)
+        if row:
+            return row['id'], row['sentence']
+
+        # Fallback to any random sentence
         row = await conn.fetchrow("SELECT id, sentence FROM italian_sentences ORDER BY RANDOM() LIMIT 1")
         if row:
             return row['id'], row['sentence']
