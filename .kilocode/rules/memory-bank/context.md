@@ -17,6 +17,10 @@ The project is in the initial Proof of Concept phase with basic functionality im
 - Implement database layer in Python using asyncpg
 - Update bot code to use database instead of static lists
 - Implement logging system with file output to /logs directory, timestamps, and init logging of database state
+- Added migrations/002_users.sql for users table (user_id, first_name, last_name, username, language_code, is_bot, is_premium, first_access_at, last_access_at)
+- Implemented get_or_create_user in src/database.py: upsert logic (updates profile/last_access_at or inserts with first_access_at)
+- Integrated get_or_create_user calls in src/bot.py handlers (/start, word callbacks, echo)
+- Created tests/test_database.py with pytest-asyncio tests for get_or_create_user and get_table_counts (now includes users)
 
 ## Next Steps
 - Create configuration management system using config.ini

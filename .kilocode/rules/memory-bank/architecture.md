@@ -13,6 +13,7 @@ parla_italiano_bot/
 │   ├── __init__.py
 │   ├── test_bot.py
 │   ├── test_game_logic.py
+│   ├── test_database.py
 ├── migrations/
 │   └── 001_initial.sql     # Database schema and initial data
 ├── deploy.sh               # Deployment script
@@ -82,8 +83,9 @@ parla_italiano_bot/
 ### Current Components
 1. **Bot Handler**: Processes Telegram messages and callbacks (src/bot.py)
 2. **Game Logic**: Manages game state and word ordering (in-memory in src/bot.py)
-3. **Data Storage**: PostgreSQL database with tables for sentences and phrases
+3. **Data Storage**: PostgreSQL database with tables for sentences, phrases, and users
 4. **Database Layer**: Handles PostgreSQL operations (src/database.py)
+5. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database.py)
 
 ### Planned Components
 1. **Bot Handler**: Processes Telegram messages and callbacks

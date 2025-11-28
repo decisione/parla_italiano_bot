@@ -9,7 +9,7 @@ import asyncio
 import random
 import logging
 from dotenv import load_dotenv
-from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts
+from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts, get_or_create_user
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -34,6 +34,7 @@ def create_word_buttons(shuffled_words):
 async def start_game(message: Message):
     """Start the word ordering game"""
     user_id = message.from_user.id
+    await get_or_create_user(message.from_user)
     await start_new_round(message, user_id)
 
 async def start_new_round(message_or_callback, user_id):
@@ -71,6 +72,7 @@ async def start_new_round(message_or_callback, user_id):
 async def handle_word_selection(callback: CallbackQuery):
     """Handle word button clicks"""
     user_id = callback.from_user.id
+    await get_or_create_user(callback.from_user)
     selected_word = callback.data.replace("word_", "")
     
     if user_id not in user_game_state:
@@ -129,6 +131,7 @@ async def handle_word_selection(callback: CallbackQuery):
 
 @router.message()
 async def echo(message: Message):
+    await get_or_create_user(message.from_user)
     await message.answer(f"You said: {message.text}")
 
 # Attach router to dispatcher

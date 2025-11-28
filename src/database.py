@@ -1,6 +1,7 @@
 import asyncpg
 import os
 from dotenv import load_dotenv
+from aiogram.types import User
 
 load_dotenv()
 
@@ -66,10 +67,43 @@ async def get_table_counts():
     )
     try:
         counts = {}
-        tables = ['italian_sentences', 'encouraging_phrases', 'error_phrases']
+        tables = ['italian_sentences', 'encouraging_phrases', 'error_phrases', 'users']
         for table in tables:
             row = await conn.fetchrow(f"SELECT COUNT(*) as count FROM {table}")
             counts[table] = row['count']
         return counts
+    finally:
+        await conn.close()
+async def get_or_create_user(user: User) -> int:
+    """Get or create user record. Updates profile fields and last_access_at if exists, inserts with first_access_at if new."""
+    conn = await asyncpg.connect(
+        host=DB_HOST, port=DB_PORT, database=DB_NAME,
+        user=DB_USER, password=DB_PASSWORD
+    )
+    try:
+        # Check if user exists
+        row = await conn.fetchrow("SELECT user_id FROM users WHERE user_id = $1", user.id)
+        if row:
+            # Update existing user profile and last access
+            await conn.execute("""
+                UPDATE users SET
+                    first_name = $2,
+                    last_name = $3,
+                    username = $4,
+                    language_code = $5,
+                    is_bot = $6,
+                    is_premium = $7,
+                    last_access_at = NOW()
+                WHERE user_id = $1
+            """, user.id, user.first_name, user.last_name, user.username, user.language_code, user.is_bot, user.is_premium)
+        else:
+            # Create new user
+            await conn.execute("""
+                INSERT INTO users (
+                    user_id, first_name, last_name, username, language_code,
+                    is_bot, is_premium, first_access_at, last_access_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+            """, user.id, user.first_name, user.last_name, user.username, user.language_code, user.is_bot, user.is_premium)
+        return user.id
     finally:
         await conn.close()

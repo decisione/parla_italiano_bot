@@ -92,6 +92,7 @@ docker
 - Async database operations with connection pooling
 - Migration-based database schema management
 - File-based logging with structured output
+- User upsert pattern: get_or_create_user handles atomic insert/update of user profile and access timestamps
 
 ### Planned Patterns
 - Repository pattern for database access
