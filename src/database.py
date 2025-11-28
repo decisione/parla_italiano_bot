@@ -3,6 +3,8 @@ import asyncio
 import os
 import re
 import logging
+import random
+import time
 from typing import List
 from dotenv import load_dotenv
 from aiogram.types import User
@@ -215,17 +217,22 @@ async def sentence_replenishment(user_id: int) -> None:
         logging.error("API_KEY not found in environment variables, cannot generate sentences")
         return
     
-    try:
-        # Initialize OpenAI client with instructor patch
-        client = instructor.patch(OpenAI(base_url=API_URL, api_key=API_KEY))
-        
-        # System prompt to guide the LLM
-        system_prompt = """Generate Italian sentences for language learning.
+    max_retries = 5
+    base_delay = 1  # Base delay in seconds
+    
+    for attempt in range(max_retries):
+        try:
+            # Initialize OpenAI client with instructor patch
+            client = instructor.patch(OpenAI(base_url=API_URL, api_key=API_KEY))
+            
+            # System prompt to guide the LLM
+            system_prompt = """Generate Italian sentences for language learning.
 Each sentence should:
 - Be in Italian (not translated from English)
 - Contain 3 to 10 words
 - Be grammatically correct
 - Use various and different topics
+- Make them fun!
 - Use standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
 
 Examples of appropriate sentences:
@@ -233,73 +240,99 @@ Examples of appropriate sentences:
 - "Mangiamo insieme stasera a cena."
 - "Dove abiti in Italia?"
 
-Please generate exactly 10 sentences in the format requested."""
-        
-        logging.info(f"Connecting to OpenAI API for user {user_id}")
-        logging.info(f"Using model: {MODEL_NAME}")
-        logging.info("Generating Italian sentences...")
-        
-        # Call the LLM with structured output
-        response: SentenceList = client.chat.completions.create(
-            model=MODEL_NAME,
-            response_model=SentenceList,
-            messages=[
-                {"role": "system", "content": system_prompt},
-            ]
-        )
-        
-        logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
-        
-        # Validate and clean sentences
-        valid_sentences = []
-        invalid_sentences = []
-        
-        for i, sentence in enumerate(response.sentences, 1):
-            cleaned = clean_sentence(sentence)
+Please generate exactly 25 sentences in the format requested."""
             
-            if is_valid_italian_sentence(cleaned):
-                valid_sentences.append(cleaned)
-                logging.debug(f"Valid sentence {i}: '{cleaned}'")
-            else:
-                invalid_sentences.append((i, cleaned))
-                word_count = len(cleaned.split())
-                logging.debug(f"Invalid sentence {i}: '{cleaned}'")
-        
-        logging.info(f"Validation Results for user {user_id}:")
-        logging.info(f"Valid sentences: {len(valid_sentences)}")
-        logging.info(f"Invalid sentences: {len(invalid_sentences)}")
-        
-        if invalid_sentences:
-            logging.info("Invalid sentences details:")
-            for i, sentence in invalid_sentences:
-                logging.info(f"  Sentence {i}: '{sentence}'")
-        
-        # Store valid sentences in the database
-        if valid_sentences:
-            conn = await asyncpg.connect(
-                host=DB_HOST, port=DB_PORT, database=DB_NAME,
-                user=DB_USER, password=DB_PASSWORD
+            logging.info(f"Connecting to OpenAI API for user {user_id} (attempt {attempt + 1}/{max_retries})")
+            logging.info(f"Using model: {MODEL_NAME}")
+            logging.info("Generating Italian sentences...")
+            
+            # Call the LLM with structured output
+            response: SentenceList = client.chat.completions.create(
+                model=MODEL_NAME,
+                response_model=SentenceList,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                ]
             )
-            try:
-                for sentence in valid_sentences:
-                    # Check if sentence already exists to avoid duplicates
-                    existing = await conn.fetchrow(
-                        "SELECT id FROM italian_sentences WHERE sentence = $1",
-                        sentence
-                    )
-                    if not existing:
-                        await conn.execute(
-                            "INSERT INTO italian_sentences (sentence) VALUES ($1)",
+            
+            # If we reach this point, the request was successful
+            logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
+            
+            # Validate and clean sentences
+            valid_sentences = []
+            invalid_sentences = []
+            
+            for i, sentence in enumerate(response.sentences, 1):
+                cleaned = clean_sentence(sentence)
+                
+                if is_valid_italian_sentence(cleaned):
+                    valid_sentences.append(cleaned)
+                    logging.debug(f"Valid sentence {i}: '{cleaned}'")
+                else:
+                    invalid_sentences.append((i, cleaned))
+                    word_count = len(cleaned.split())
+                    logging.debug(f"Invalid sentence {i}: '{cleaned}'")
+            
+            logging.info(f"Validation Results for user {user_id}:")
+            logging.info(f"Valid sentences: {len(valid_sentences)}")
+            logging.info(f"Invalid sentences: {len(invalid_sentences)}")
+            
+            if invalid_sentences:
+                logging.info("Invalid sentences details:")
+                for i, sentence in invalid_sentences:
+                    logging.info(f"  Sentence {i}: '{sentence}'")
+            
+            # Store valid sentences in the database
+            if valid_sentences:
+                conn = await asyncpg.connect(
+                    host=DB_HOST, port=DB_PORT, database=DB_NAME,
+                    user=DB_USER, password=DB_PASSWORD
+                )
+                try:
+                    for sentence in valid_sentences:
+                        # Check if sentence already exists to avoid duplicates
+                        existing = await conn.fetchrow(
+                            "SELECT id FROM italian_sentences WHERE sentence = $1",
                             sentence
                         )
-                        logging.debug(f"Added sentence to database: '{sentence}'")
-                    else:
-                        logging.debug(f"Skipped duplicate sentence: '{sentence}'")
-                
-                logging.info(f"Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
-                
-            finally:
-                await conn.close()
-        
-    except Exception as e:
-        logging.error(f"Error generating sentences for user {user_id}: {e}")
+                        if not existing:
+                            await conn.execute(
+                                "INSERT INTO italian_sentences (sentence) VALUES ($1)",
+                                sentence
+                            )
+                            logging.debug(f"Added sentence to database: '{sentence}'")
+                        else:
+                            logging.debug(f"Skipped duplicate sentence: '{sentence}'")
+                    
+                    logging.info(f"Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
+                    
+                finally:
+                    await conn.close()
+            
+            # Success - break out of retry loop
+            break
+            
+        except Exception as e:
+            logging.warning(f"Attempt {attempt + 1} failed for user {user_id}: {e}")
+            
+            # Check if it's a rate limit error (429)
+            if hasattr(e, 'status_code') and e.status_code == 429:
+                if attempt < max_retries - 1:  # Don't wait on the last attempt
+                    # Wait a random amount of time between base_delay and base_delay * 2^attempt
+                    wait_time = random.uniform(base_delay, base_delay * (2 ** attempt))
+                    logging.info(f"Rate limited. Waiting {wait_time:.2f} seconds before retry...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    logging.error(f"Rate limit exceeded after {max_retries} attempts for user {user_id}")
+                    return
+            else:
+                if attempt < max_retries - 1:  # Don't wait on the last attempt
+                    # Wait before retrying for other types of errors
+                    wait_time = random.uniform(base_delay, base_delay * (2 ** attempt))
+                    logging.info(f"Waiting {wait_time:.2f} seconds before retry...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    logging.error(f"Failed to generate sentences after {max_retries} attempts for user {user_id}: {e}")
+                    return

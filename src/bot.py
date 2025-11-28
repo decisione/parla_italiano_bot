@@ -105,7 +105,7 @@ async def handle_word_selection(callback: CallbackQuery):
             phrase = await get_random_error_phrase()
             emojis = ["❌", "✖️", "⚠️", "⁉️", "🆘", "🚫", "📛", "🛑", "⛔", "🌩️", "🪫", "🩻", "🧱", "🤚", "👎", "😞", "😪", "😣", "🥲"]
             emoji = random.choice(emojis)
-            await callback.message.edit_text(f"{emoji} {phrase}\n{' '.join(original_words)}")
+            await callback.message.edit_text(f"{emoji} {phrase}\nLa tua risposta: {' '.join(selected_order)}\nOrdine corretto: {' '.join(original_words)}")
             await callback.answer("Ordine sbagliato!")
         
         # Store the result
