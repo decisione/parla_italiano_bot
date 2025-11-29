@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Generate Italian Sentences using OpenAI API with Instructor for structured output.
-This script generates 10 new Italian sentences, validates them, and prints the results.
+This script generates some new Italian sentences, validates them, and prints the results.
+This script is for experiments only! Do not modify it if not explicitly instructed to do so!
 """
 
 import os
@@ -23,7 +24,7 @@ API_KEY = os.getenv("API_KEY")
 MODEL_NAME = "qwen/qwen3-235b-a22b:free"
 
 # Italian character set including accented vowels
-ITALIAN_CHARACTERS = set('abcdefghilmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+ITALIAN_CHARACTERS = set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
 
 # Pydantic model for structured output
 class SentenceList(pydantic.BaseModel):
@@ -72,14 +73,15 @@ Each sentence should:
 - Contain 3 to 10 words
 - Be grammatically correct
 - Use various and different topics
+- Make some of them fun! Make some jokes!
 - Use standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
 
 Examples of appropriate sentences:
-- "A che ora è la tua lezione?"
-- "Mangiamo insieme stasera a cena"
-- "Dove abiti in Italia?"
+- "L'unico mobile presente nella stanza era il nonno."
+- "Questa stanza è troppo costosa, dormirò per strada."
+- "Perché non ti piace Marco, ha la barba?"
 
-Please generate exactly 10 sentences in the format requested."""
+Please generate exactly 25 sentences in the format requested."""
     
     try:
         print("Connecting to OpenAI API...")
@@ -106,15 +108,11 @@ Please generate exactly 10 sentences in the format requested."""
             
             if is_valid_italian_sentence(cleaned):
                 valid_sentences.append(cleaned)
-                print(f"✓ Sentence {i}: '{cleaned}' (valid)")
             else:
                 invalid_sentences.append((i, cleaned))
-                word_count = len(cleaned.split())
-                print(f"✗ Sentence {i}: '{cleaned}' (invalid - {word_count} words or invalid characters)")
         
-        print(f"\nValidation Results:")
-        print(f"Valid sentences: {len(valid_sentences)}/10")
-        print(f"Invalid sentences: {len(invalid_sentences)}/10")
+        print(f"\nValid sentences: {len(valid_sentences)}")
+        print(f"Invalid sentences: {len(invalid_sentences)}")
         
         if invalid_sentences:
             print("\nInvalid sentences details:")

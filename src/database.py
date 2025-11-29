@@ -26,7 +26,7 @@ API_KEY = os.getenv("API_KEY")
 MODEL_NAME = "qwen/qwen3-235b-a22b:free"
 
 # Italian character set including accented vowels
-ITALIAN_CHARACTERS = set('abcdefghilmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+ITALIAN_CHARACTERS = set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
 
 # SETUP
 
@@ -238,13 +238,13 @@ Each sentence should:
 - Contain 3 to 10 words
 - Be grammatically correct
 - Use various and different topics
-- Make them fun!
+- Make some of them fun! Make some jokes!
 - Use standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
 
 Examples of appropriate sentences:
-- "A che ora è la tua lezione?"
-- "Mangiamo insieme stasera a cena."
-- "Dove abiti in Italia?"
+- "L'unico mobile presente nella stanza era il nonno."
+- "Questa stanza è troppo costosa, dormirò per strada."
+- "Perché non ti piace Marco, ha la barba?"
 
 Please generate exactly 25 sentences in the format requested."""
             

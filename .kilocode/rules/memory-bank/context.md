@@ -25,5 +25,4 @@ The project is in the initial Proof of Concept phase with basic functionality im
 ## Next Steps
 - Create configuration management system using config.ini
 - Develop user authorization system
-- Implement LLM integration for dynamic content generation
 - Add "stories" mode for interactive learning

@@ -95,9 +95,6 @@ The project is planned to evolve with the following features:
 ### Authorization
 - User authorization system
 
-### Replenishment
-- LLM integration for dynamic content generation
-
 ### Stories
 - Stories mode implementation
 
