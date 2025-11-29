@@ -23,11 +23,22 @@ router = Router()
 
 def create_word_buttons(shuffled_words):
     """Create buttons for each word using the provided shuffled order"""
-    buttons = []
-    for word in shuffled_words:
-        buttons.append(types.InlineKeyboardButton(text=word, callback_data=f"word_{word}"))
+    keyboard_rows = []
+    current_row = []
     
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[buttons])
+    for word in shuffled_words:
+        current_row.append(types.InlineKeyboardButton(text=word, callback_data=f"word_{word}"))
+        
+        # Start a new row after every 4 buttons
+        if len(current_row) == 4:
+            keyboard_rows.append(current_row)
+            current_row = []
+    
+    # Add any remaining buttons in the last row
+    if current_row:
+        keyboard_rows.append(current_row)
+    
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
     return keyboard
 
 @router.message(CommandStart())
@@ -96,16 +107,23 @@ async def handle_word_selection(callback: CallbackQuery):
         if original_words == selected_order:
             # Select a random encouraging phrase
             phrase = await get_random_encouraging_phrase()
-            emojis = ["🎉", "✅", "💣", "💥", "🥳", "🎆", "🎇", "➕", "🤩", "😎", "🥳", "💪", "👍", "🎈", "🎯", "🥇", "🏅", "🎖️", "🏆"]
+            emojis = ["🎉", "✅", "💣", "💥", "🥳", "🎆", "🎇", "🤩", "😎", "🥳", "💪", "👍", "🎈", "🎯", "🥇", "🏅", "🎖️", "🏆"]
             emoji = random.choice(emojis)
-            await callback.message.edit_text(f"{emoji} {phrase}\n{' '.join(original_words)}")
+           
+            await callback.message.edit_text(
+                f"{emoji} {phrase} {emoji}\n<blockquote>{' '.join(original_words)}</blockquote>\n",
+                parse_mode="HTML"
+            )
             await callback.answer("Corretto!")
         else:
             # Select a random error phrase
             phrase = await get_random_error_phrase()
             emojis = ["❌", "✖️", "⚠️", "⁉️", "🆘", "🚫", "📛", "🛑", "⛔", "🌩️", "🪫", "🩻", "🧱", "🤚", "👎", "😞", "😪", "😣", "🥲"]
             emoji = random.choice(emojis)
-            await callback.message.edit_text(f"{emoji} {phrase}\nLa tua risposta: {' '.join(selected_order)}\nOrdine corretto: {' '.join(original_words)}")
+            await callback.message.edit_text(
+                f"{emoji} {phrase}\nLa tua risposta: <blockquote>{' '.join(selected_order)}</blockquote>\nOrdine corretto: <blockquote>{' '.join(original_words)}</blockquote>\n",
+                parse_mode="HTML"
+            )
             await callback.answer("Ordine sbagliato!")
         
         # Store the result
@@ -114,15 +132,11 @@ async def handle_word_selection(callback: CallbackQuery):
             await store_sentence_result(user_id, sentence_id, original_words == selected_order)
         
         # Start next round after a short delay
-        await asyncio.sleep(1)
+        #await asyncio.sleep(1)
         await start_new_round(callback.message, user_id)
     else:
         # Create keyboard with remaining buttons
-        buttons = []
-        for word in remaining_words:
-            buttons.append(types.InlineKeyboardButton(text=word, callback_data=f"word_{word}"))
-        
-        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[buttons])
+        keyboard = create_word_buttons(remaining_words)
         
         # Update the message with remaining buttons
         selected_sentence = ' '.join(user_game_state[user_id]['selected_words'])
