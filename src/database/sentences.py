@@ -75,7 +75,7 @@ async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
             )
         """, user_id)
         unused_count = count_row['unused_count'] if count_row else 0
-        if unused_count < 25: # TEMP, WAS 10
+        if unused_count < 10:
             asyncio.create_task(sentence_replenishment(user_id))
 
         # Prefer sentences not successfully completed by this user
@@ -186,7 +186,7 @@ Examples of appropriate sentences:
 - "Questa stanza è troppo costosa, dormirò per strada."
 - "Perché non ti piace Marco, ha la barba?"
 
-Please generate exactly 2 sentences in the format requested.""" # TEMP: WAS 25 SENTENCES
+Please generate exactly 25 sentences in the format requested."""
         
         logging.info(f"Connecting to OpenAI API for user {user_id}")
         logging.info(f"Using model: {llm_config.model_name}")
