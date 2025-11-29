@@ -84,12 +84,42 @@ async def get_stats_data(user_id: int):
         if user_success_row and user_success_row['total'] > 0:
             user_success_rate = (user_success_row['successes'] / user_success_row['total']) * 100
         
+        # Get today's global stats
+        today_global_row = await conn.fetchrow("""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN is_success = true THEN 1 ELSE 0 END) as successes
+            FROM italian_sentences_results
+            WHERE DATE(timestamp) = CURRENT_DATE
+        """)
+        today_global_attempts = today_global_row['total'] if today_global_row else 0
+        today_global_success_rate = 0.0
+        if today_global_row and today_global_attempts > 0:
+            today_global_success_rate = (today_global_row['successes'] / today_global_attempts) * 100
+        
+        # Get today's user stats
+        today_user_row = await conn.fetchrow("""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN is_success = true THEN 1 ELSE 0 END) as successes
+            FROM italian_sentences_results
+            WHERE user_id = $1 AND DATE(timestamp) = CURRENT_DATE
+        """, user_id)
+        today_user_attempts = today_user_row['total'] if today_user_row else 0
+        today_user_success_rate = 0.0
+        if today_user_row and today_user_attempts > 0:
+            today_user_success_rate = (today_user_row['successes'] / today_user_attempts) * 100
+        
         return {
             'total_users': total_users,
             'total_sentences': total_sentences,
             'total_attempts': total_attempts,
             'global_success_rate': global_success_rate,
-            'user_success_rate': user_success_rate
+            'user_success_rate': user_success_rate,
+            'today_global_attempts': today_global_attempts,
+            'today_global_success_rate': today_global_success_rate,
+            'today_user_attempts': today_user_attempts,
+            'today_user_success_rate': today_user_success_rate
         }
     finally:
         await conn.close()

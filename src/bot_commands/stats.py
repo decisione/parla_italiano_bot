@@ -45,13 +45,18 @@ def create_stats_command_handler():
         
         # Format statistics in Italian
         stats_text = f"""Statistiche del Bot:
+- Utenti totali: <b>{stats['total_users']}</b>
+- Frasi totali: <b>{stats['total_sentences']}</b> (aggiunto automaticamente se necessario)
+- Tentativi totali: <b>{stats['total_attempts']}</b>
+- Tasso di successo globale: <b>{stats['global_success_rate']:.1f}%</b>
+- Tasso di successo personale: <b>{stats['user_success_rate']:.1f}%</b>
 
--- Utenti totali: {stats['total_users']}
--- Frasi totali: {stats['total_sentences']} (rifornito automaticamente quando necessario)
--- Tentativi totali: {stats['total_attempts']}
--- Tasso di successo globale: {stats['global_success_rate']:.1f}%
--- Tasso di successo personale: {stats['user_success_rate']:.1f}%"""
+Statistiche di oggi:
+- Tentativi globali: <b>{stats['today_global_attempts']}</b>
+- I tuoi tentativi: <b>{stats['today_user_attempts']}</b>
+- Successo globale: <b>{stats['today_global_success_rate']:.1f}%</b>
+- Il tuo successo: <b>{stats['today_user_success_rate']:.1f}%</b>"""
         
-        await message.answer(stats_text)
+        await message.answer(stats_text, parse_mode="HTML")
     
     return stats_command_handler

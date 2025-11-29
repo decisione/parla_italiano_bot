@@ -38,7 +38,11 @@ async def test_stats_command_handler():
             'total_sentences': 50,
             'total_attempts': 100,
             'global_success_rate': 75.5,
-            'user_success_rate': 80.0
+            'user_success_rate': 80.0,
+            'today_global_attempts': 25,
+            'today_global_success_rate': 72.0,
+            'today_user_attempts': 5,
+            'today_user_success_rate': 80.0
         }
         
         # Create and call the handler
@@ -54,12 +58,17 @@ async def test_stats_command_handler():
         response_text = mock_message.answer.call_args[0][0]
         
         # Check that all required statistics are in the response
-        assert "📊 Statistiche del Bot" in response_text
-        assert "👥 Utenti totali: 10" in response_text
-        assert "📝 Frasi totali: 50 (aggiunto automaticamente se necessario)" in response_text
-        assert "🎯 Tentativi totali: 100" in response_text
-        assert "📈 Tasso di successo globale: 75.5%" in response_text
-        assert "🎯 Tasso di successo personale: 80.0%" in response_text
+        assert "Statistiche del Bot" in response_text
+        assert "Utenti totali: <b>10</b>" in response_text
+        assert "Frasi totali: <b>50</b> (aggiunto automaticamente se necessario)" in response_text
+        assert "Tentativi totali: <b>100</b>" in response_text
+        assert "Tasso di successo globale: <b>75.5%</b>" in response_text
+        assert "Tasso di successo personale: <b>80.0%</b>" in response_text
+        assert "Statistiche di oggi:" in response_text
+        assert "Tentativi globali: <b>25</b>" in response_text
+        assert "Successo globale: <b>72.0%</b>" in response_text
+        assert "I tuoi tentativi: <b>5</b>" in response_text
+        assert "Il tuo successo: <b>80.0%</b>" in response_text
 
 
 @pytest.mark.asyncio
@@ -83,7 +92,11 @@ async def test_stats_command_handler_zero_attempts():
             'total_sentences': 25,
             'total_attempts': 0,
             'global_success_rate': 0.0,
-            'user_success_rate': 0.0
+            'user_success_rate': 0.0,
+            'today_global_attempts': 0,
+            'today_global_success_rate': 0.0,
+            'today_user_attempts': 0,
+            'today_user_success_rate': 0.0
         }
         
         # Create and call the handler
@@ -95,9 +108,14 @@ async def test_stats_command_handler_zero_attempts():
         response_text = mock_message.answer.call_args[0][0]
         
         # Check that all required statistics are in the response
-        assert "📊 Statistiche del Bot" in response_text
-        assert "👥 Utenti totali: 5" in response_text
-        assert "📝 Frasi totali: 25 (aggiunto automaticamente se necessario)" in response_text
-        assert "🎯 Tentativi totali: 0" in response_text
-        assert "📈 Tasso di successo globale: 0.0%" in response_text
-        assert "🎯 Tasso di successo personale: 0.0%" in response_text
+        assert "Statistiche del Bot" in response_text
+        assert "Utenti totali: <b>5</b>" in response_text
+        assert "Frasi totali: <b>25</b> (aggiunto automaticamente se necessario)" in response_text
+        assert "Tentativi totali: <b>0</b>" in response_text
+        assert "Tasso di successo globale: <b>0.0%</b>" in response_text
+        assert "Tasso di successo personale: <b>0.0%</b>" in response_text
+        assert "Statistiche di oggi:" in response_text
+        assert "Tentativi globali: <b>0</b>" in response_text
+        assert "Successo globale: <b>0.0%</b>" in response_text
+        assert "I tuoi tentativi: <b>0</b>" in response_text
+        assert "Il tuo successo: <b>0.0%</b>" in response_text

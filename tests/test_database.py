@@ -220,7 +220,9 @@ async def test_get_stats_data(mock_connect):
         {'count': 50},  # total_sentences
         {'count': 100}, # total_attempts
         {'total': 100, 'successes': 75},  # global success rate
-        {'total': 20, 'successes': 16}    # user success rate
+        {'total': 20, 'successes': 16},   # user success rate
+        {'total': 20, 'successes': 14},   # today global success rate
+        {'total': 4, 'successes': 3}      # today user success rate
     ]
     
     mock_connect.return_value = mock_conn
@@ -234,6 +236,10 @@ async def test_get_stats_data(mock_connect):
     assert stats['total_attempts'] == 100
     assert stats['global_success_rate'] == 75.0
     assert stats['user_success_rate'] == 80.0
+    assert stats['today_global_attempts'] == 20
+    assert stats['today_global_success_rate'] == 70.0
+    assert stats['today_user_attempts'] == 4
+    assert stats['today_user_success_rate'] == 75.0
     
     # Verify connection was closed
     mock_conn.close.assert_called_once()
@@ -251,7 +257,9 @@ async def test_get_stats_data_zero_attempts(mock_connect):
         {'count': 25},  # total_sentences
         {'count': 0},   # total_attempts
         {'total': 0, 'successes': 0},  # global success rate
-        {'total': 0, 'successes': 0}   # user success rate
+        {'total': 0, 'successes': 0},  # user success rate
+        {'total': 0, 'successes': 0},  # today global success rate
+        {'total': 0, 'successes': 0}   # today user success rate
     ]
     
     mock_connect.return_value = mock_conn
@@ -265,3 +273,7 @@ async def test_get_stats_data_zero_attempts(mock_connect):
     assert stats['total_attempts'] == 0
     assert stats['global_success_rate'] == 0.0
     assert stats['user_success_rate'] == 0.0
+    assert stats['today_global_attempts'] == 0
+    assert stats['today_global_success_rate'] == 0.0
+    assert stats['today_user_attempts'] == 0
+    assert stats['today_user_success_rate'] == 0.0

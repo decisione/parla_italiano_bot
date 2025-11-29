@@ -51,6 +51,14 @@ The project has moved beyond the Proof of Concept phase and now has a solid, pro
   - Updated bot application to register the new command
   - Added comprehensive test coverage for both command handler and database function
   - All tests pass successfully
+- **Stats Command Enhancement Complete**: Enhanced `/stats` command with today's statistics:
+  - Added today's global attempts and success rate
+  - Added today's individual user attempts and success rate
+  - Updated database queries to filter by current date using `DATE(timestamp) = CURRENT_DATE`
+  - Enhanced command display with separate "Statistiche di oggi" section
+  - Added emoji indicators for better visual distinction
+  - Updated all tests to cover new functionality
+  - All tests pass successfully
 
 ## Next Steps
 - Develop user authorization system
