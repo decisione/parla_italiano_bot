@@ -8,6 +8,7 @@ and data processing functions used across different database modules.
 import logging
 import random
 import asyncio
+import time
 import pydantic
 from typing import List, Optional
 from openai import OpenAI
@@ -97,7 +98,7 @@ async def get_llm_client():
     return instructor.patch(OpenAI(base_url=llm_config.api_url, api_key=llm_config.api_key))
 
 
-async def execute_with_retry(func, max_retries: int = 5, base_delay: int = 1):
+async def execute_with_retry(func, max_retries: int = 5, base_delay: int = 3):
     """
     Execute a function with retry logic for handling transient errors.
     
@@ -133,6 +134,48 @@ async def execute_with_retry(func, max_retries: int = 5, base_delay: int = 1):
                     wait_time = random.uniform(base_delay, base_delay * (2 ** attempt))
                     logging.info(f"Waiting {wait_time:.2f} seconds before retry...")
                     await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    logging.error(f"Failed after {max_retries} attempts: {e}")
+                    raise
+
+
+def execute_with_retry_sync(func, max_retries: int = 5, base_delay: int = 3):
+    """
+    Execute a synchronous function with retry logic for handling transient errors.
+    
+    Args:
+        func: Synchronous function to execute
+        max_retries: Maximum number of retry attempts
+        base_delay: Base delay in seconds for exponential backoff
+    
+    Returns:
+        Result of the executed function
+    
+    Raises:
+        Exception: If all retry attempts fail
+    """
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            # Check if it's a rate limit error (429)
+            if hasattr(e, 'status_code') and e.status_code == 429:
+                if attempt < max_retries - 1:  # Don't wait on the last attempt
+                    # Wait a random amount of time between base_delay and base_delay * 2^attempt
+                    wait_time = random.uniform(base_delay, base_delay * (2 ** attempt))
+                    logging.info(f"Rate limited. Waiting {wait_time:.2f} seconds before retry...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logging.error(f"Rate limit exceeded after {max_retries} attempts")
+                    raise
+            else:
+                if attempt < max_retries - 1:  # Don't wait on the last attempt
+                    # Wait before retrying for other types of errors
+                    wait_time = random.uniform(base_delay, base_delay * (2 ** attempt))
+                    logging.info(f"Waiting {wait_time:.2f} seconds before retry...")
+                    time.sleep(wait_time)
                     continue
                 else:
                     logging.error(f"Failed after {max_retries} attempts: {e}")

@@ -45,8 +45,8 @@ def get_llm_config():
 from .base import (
     is_valid_italian_sentence,
     clean_sentence,
-    get_llm_client,
     execute_with_retry,
+    execute_with_retry_sync,
     SentenceList
 )
 
@@ -148,10 +148,20 @@ async def sentence_replenishment(user_id: int) -> None:
         logging.error("LLM_API_KEY not found in environment variables, cannot generate sentences")
         return
     
-    async def generate_sentences():
+    def generate_sentences():
         """Generate sentences using LLM"""
         # Initialize OpenAI client with instructor patch
-        client = await get_llm_client()
+        # Since we're already in an async context, we need to get the client synchronously
+        llm_config = get_llm_config()
+        
+        # Check if API key is available
+        if not llm_config.api_key:
+            raise ValueError("LLM_API_KEY not found in environment variables")
+        
+        # Create the client directly without async
+        import instructor
+        from openai import OpenAI
+        client = instructor.patch(OpenAI(base_url=llm_config.api_url, api_key=llm_config.api_key))
         
         # System prompt to guide the LLM
         system_prompt = """Generate Italian sentences for language learning.
@@ -175,20 +185,66 @@ Please generate exactly 25 sentences in the format requested."""
         logging.info("Generating Italian sentences...")
         
         # Call the LLM with structured output
-        response: SentenceList = await client.chat.completions.create(
-            model=llm_config.model_name,
-            response_model=SentenceList,
-            messages=[
-                {"role": "system", "content": system_prompt},
-            ]
-        )
+        logging.debug(f"About to call LLM API with model: {llm_config.model_name}")
+        logging.debug(f"Response model type: {type(SentenceList)}")
+        logging.debug(f"Response model: {SentenceList}")
+        
+        try:
+            # The instructor.patch modifies the client to support response_model parameter
+            # In newer versions of instructor, the create method is synchronous, not async
+            response: SentenceList = client.chat.completions.create(
+                model=llm_config.model_name,
+                response_model=SentenceList,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                ]
+            )
+            logging.debug(f"LLM API call successful, response type: {type(response)}")
+            logging.debug(f"Generated sentences count: {len(response.sentences)}")
+            
+        except Exception as e:
+            logging.error(f"LLM API call failed: {e}")
+            logging.error(f"Exception type: {type(e)}")
+            logging.error(f"Exception args: {e.args}")
+            
+            # Fallback: try without response_model and parse manually
+            logging.info("Falling back to manual parsing approach")
+            try:
+                raw_response = client.chat.completions.create(
+                    model=llm_config.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                    ]
+                )
+                content = raw_response.choices[0].message.content
+                logging.debug(f"Raw response content: {content}")
+                
+                # Parse the content manually into sentences
+                # Assuming the LLM returns sentences separated by newlines or numbered list
+                sentences = []
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line:
+                        # Remove numbering if present (e.g., "1. ", "2) ", etc.)
+                        import re
+                        line = re.sub(r'^\s*\d+[\.\)\-]\s*', '', line)
+                        if line:
+                            sentences.append(line)
+                
+                response = SentenceList(sentences=sentences)
+                logging.debug(f"Parsed {len(sentences)} sentences manually")
+                
+            except Exception as e2:
+                logging.error(f"Fallback approach also failed: {e2}")
+                raise
         
         logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
         return response.sentences
     
     try:
         # Generate sentences with retry logic
-        generated_sentences = await execute_with_retry(generate_sentences)
+        # Since generate_sentences is now synchronous, we need to use a sync retry function
+        generated_sentences = execute_with_retry_sync(generate_sentences)
         
         # Validate and clean sentences
         valid_sentences = []
