@@ -10,6 +10,13 @@ import asyncio
 import logging
 import sys
 import os
+import concurrent.futures
+import time
+
+# Configure logging to suppress verbose OpenAI library logs
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aiogram.types import User
@@ -68,7 +75,7 @@ async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
             )
         """, user_id)
         unused_count = count_row['unused_count'] if count_row else 0
-        if unused_count < 10:
+        if unused_count < 25: # TEMP, WAS 10
             asyncio.create_task(sentence_replenishment(user_id))
 
         # Prefer sentences not successfully completed by this user
@@ -138,7 +145,8 @@ async def get_random_error_phrase() -> str:
 
 async def sentence_replenishment(user_id: int) -> None:
     """Generate Italian sentences using OpenAI API and store them in the database"""
-    logging.info(f"Starting sentence replenishment for user {user_id}")
+    logging.info(f"🔄 Starting sentence replenishment for user {user_id}")
+    start_time = time.time()
     
     # Get LLM configuration
     llm_config = get_llm_config()
@@ -178,7 +186,7 @@ Examples of appropriate sentences:
 - "Questa stanza è troppo costosa, dormirò per strada."
 - "Perché non ti piace Marco, ha la barba?"
 
-Please generate exactly 25 sentences in the format requested."""
+Please generate exactly 2 sentences in the format requested.""" # TEMP: WAS 25 SENTENCES
         
         logging.info(f"Connecting to OpenAI API for user {user_id}")
         logging.info(f"Using model: {llm_config.model_name}")
@@ -192,6 +200,8 @@ Please generate exactly 25 sentences in the format requested."""
         try:
             # The instructor.patch modifies the client to support response_model parameter
             # In newer versions of instructor, the create method is synchronous, not async
+            logging.info(f"🌐 Making LLM API request to {llm_config.api_url} with model {llm_config.model_name}")
+            api_start_time = time.time()
             response: SentenceList = client.chat.completions.create(
                 model=llm_config.model_name,
                 response_model=SentenceList,
@@ -199,23 +209,29 @@ Please generate exactly 25 sentences in the format requested."""
                     {"role": "system", "content": system_prompt},
                 ]
             )
+            api_duration = time.time() - api_start_time
+            logging.info(f"🌐 LLM API request completed in {api_duration:.2f} seconds")
             logging.debug(f"LLM API call successful, response type: {type(response)}")
             logging.debug(f"Generated sentences count: {len(response.sentences)}")
             
         except Exception as e:
-            logging.error(f"LLM API call failed: {e}")
-            logging.error(f"Exception type: {type(e)}")
-            logging.error(f"Exception args: {e.args}")
+            # Log concise error message without verbose details
+            error_msg = str(e) if len(str(e)) < 100 else f"{str(e)[:100]}..."
+            logging.error(f"LLM API call failed: {error_msg}")
             
             # Fallback: try without response_model and parse manually
             logging.info("Falling back to manual parsing approach")
             try:
+                logging.info(f"🌐 Making fallback LLM API request to {llm_config.api_url} with model {llm_config.model_name}")
+                fallback_start_time = time.time()
                 raw_response = client.chat.completions.create(
                     model=llm_config.model_name,
                     messages=[
                         {"role": "system", "content": system_prompt},
                     ]
                 )
+                fallback_duration = time.time() - fallback_start_time
+                logging.info(f"🌐 Fallback LLM API request completed in {fallback_duration:.2f} seconds")
                 content = raw_response.choices[0].message.content
                 logging.debug(f"Raw response content: {content}")
                 
@@ -235,7 +251,9 @@ Please generate exactly 25 sentences in the format requested."""
                 logging.debug(f"Parsed {len(sentences)} sentences manually")
                 
             except Exception as e2:
-                logging.error(f"Fallback approach also failed: {e2}")
+                # Log concise fallback error
+                fallback_error = str(e2) if len(str(e2)) < 100 else f"{str(e2)[:100]}..."
+                logging.error(f"Fallback approach also failed: {fallback_error}")
                 raise
         
         logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
@@ -243,8 +261,22 @@ Please generate exactly 25 sentences in the format requested."""
     
     try:
         # Generate sentences with retry logic
-        # Since generate_sentences is now synchronous, we need to use a sync retry function
-        generated_sentences = execute_with_retry_sync(generate_sentences)
+        # Run the synchronous LLM calls in a thread pool to avoid blocking the event loop
+        logging.info(f"⏳ Starting LLM API call for user {user_id}...")
+        llm_start_time = time.time()
+        
+        # Use a thread pool executor to run the blocking LLM calls
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Run the sync function in a thread
+            generated_sentences = await loop.run_in_executor(
+                executor,
+                execute_with_retry_sync,
+                generate_sentences
+            )
+        
+        llm_duration = time.time() - llm_start_time
+        logging.info(f"✅ LLM API call completed for user {user_id} in {llm_duration:.2f} seconds")
         
         # Validate and clean sentences
         valid_sentences = []
@@ -272,6 +304,8 @@ Please generate exactly 25 sentences in the format requested."""
         
         # Store valid sentences in the database
         if valid_sentences:
+            logging.info(f"💾 Starting database storage for user {user_id}...")
+            db_start_time = time.time()
             db_config = get_database_config()
             conn = await asyncpg.connect(
                 host=db_config.host, port=db_config.port, database=db_config.name,
@@ -293,10 +327,18 @@ Please generate exactly 25 sentences in the format requested."""
                     else:
                         logging.debug(f"Skipped duplicate sentence: '{sentence}'")
                 
-                logging.info(f"Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
+                logging.info(f"✅ Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
                 
             finally:
                 await conn.close()
+                db_duration = time.time() - db_start_time
+                logging.info(f"💾 Database storage completed for user {user_id} in {db_duration:.2f} seconds")
     
     except Exception as e:
-        logging.error(f"Failed to generate sentences for user {user_id}: {e}")
+        # Log concise error message without verbose details
+        error_msg = str(e) if len(str(e)) < 100 else f"{str(e)[:100]}..."
+        logging.error(f"❌ Failed to generate sentences for user {user_id}: {error_msg}")
+    
+    finally:
+        total_duration = time.time() - start_time
+        logging.info(f"🔚 Sentence replenishment completed for user {user_id} in {total_duration:.2f} seconds")

@@ -107,6 +107,7 @@ class ParlaItalianoBot:
     
     async def _log_initialization_info(self) -> None:
         """Log application initialization information."""
+        logging.info("1"*80)
         logging.info("Bot is starting...")
         logging.info("Connecting to database for init logging...")
         
