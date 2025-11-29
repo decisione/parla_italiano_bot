@@ -40,10 +40,20 @@ The project has moved beyond the Proof of Concept phase and now has a solid, pro
   - Fixed naming conventions to avoid inappropriate "game" terminology
   - All tests pass successfully
   - Maintained full backward compatibility and existing functionality
+- **Stats Command Implementation Complete**: Successfully implemented new `/stats` bot command that provides comprehensive statistics:
+  - Number of users in the system
+  - Total number of sentences with Italian text as requested
+  - Total number of logged attempts (results)
+  - Global success rate across all users
+  - Individual user success rate
+  - Created `src/bot_commands/stats.py` with command handler
+  - Added `get_stats_data()` function to database connection module
+  - Updated bot application to register the new command
+  - Added comprehensive test coverage for both command handler and database function
+  - All tests pass successfully
 
 ## Next Steps
-- Implement additional bot commands beyond /start
 - Develop user authorization system
 - Add "stories" mode for interactive learning
 - Enhance learning exercise mechanics and user experience
-- Add stats for users to show their progress
+- Implement additional bot commands beyond /start and /stats

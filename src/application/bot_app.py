@@ -26,7 +26,7 @@ try:
     from database import get_schema_migrations, get_table_counts
     from state.learning_state import LearningState
     from exercises.sentence_ordering import SentenceOrderingExercise
-    from bot_commands import create_start_command_handler, create_echo_handler, create_help_command_handler
+    from bot_commands import create_start_command_handler, create_echo_handler, create_help_command_handler, create_stats_command_handler
 except ImportError:
     # Fallback for Docker environment
     from src.config import get_bot_config, get_logging_config
@@ -75,6 +75,10 @@ class ParlaItalianoBot:
         # Create and register /help command handler
         help_handler = create_help_command_handler()
         self.router.message(Command("help"))(help_handler)
+        
+        # Create and register /stats command handler
+        stats_handler = create_stats_command_handler()
+        self.router.message(Command("stats"))(stats_handler)
     
     def _setup_callback_handlers(self) -> None:
         """Setup callback query handlers."""

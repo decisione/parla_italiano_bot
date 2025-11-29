@@ -10,7 +10,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import all functions from submodules to maintain backward compatibility
-from .connection import get_schema_migrations, get_table_counts
+from .connection import get_schema_migrations, get_table_counts, get_stats_data
 from .users import get_or_create_user
 from .sentences import (
     get_random_sentence,
@@ -29,6 +29,7 @@ __all__ = [
     # Connection functions
     'get_schema_migrations',
     'get_table_counts',
+    'get_stats_data',
     
     # User functions
     'get_or_create_user',

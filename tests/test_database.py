@@ -8,7 +8,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from aiogram.types import User
-from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result
+from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result, get_stats_data
 from src.database.base import is_valid_italian_sentence
 
 @pytest.fixture(scope="session")
@@ -206,3 +206,62 @@ def test_is_valid_italian_sentence_case_insensitive_duplicates():
     assert is_valid_italian_sentence("Ciao come stai CIAO") == False
     assert is_valid_italian_sentence("A che ora è la tua lezione A") == False
     assert is_valid_italian_sentence("Mangiamo insieme Mangiamo a cena") == False
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_stats_data(mock_connect):
+    """Test getting statistics data"""
+    mock_conn = AsyncMock()
+    
+    # Setup mock fetchrow responses
+    mock_conn.fetchrow.side_effect = [
+        {'count': 10},  # total_users
+        {'count': 50},  # total_sentences
+        {'count': 100}, # total_attempts
+        {'total': 100, 'successes': 75},  # global success rate
+        {'total': 20, 'successes': 16}    # user success rate
+    ]
+    
+    mock_connect.return_value = mock_conn
+    
+    # Call the function
+    stats = await get_stats_data(12345)
+    
+    # Verify the results
+    assert stats['total_users'] == 10
+    assert stats['total_sentences'] == 50
+    assert stats['total_attempts'] == 100
+    assert stats['global_success_rate'] == 75.0
+    assert stats['user_success_rate'] == 80.0
+    
+    # Verify connection was closed
+    mock_conn.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_stats_data_zero_attempts(mock_connect):
+    """Test getting statistics data when there are no attempts"""
+    mock_conn = AsyncMock()
+    
+    # Setup mock fetchrow responses with zero attempts
+    mock_conn.fetchrow.side_effect = [
+        {'count': 5},   # total_users
+        {'count': 25},  # total_sentences
+        {'count': 0},   # total_attempts
+        {'total': 0, 'successes': 0},  # global success rate
+        {'total': 0, 'successes': 0}   # user success rate
+    ]
+    
+    mock_connect.return_value = mock_conn
+    
+    # Call the function
+    stats = await get_stats_data(12345)
+    
+    # Verify the results
+    assert stats['total_users'] == 5
+    assert stats['total_sentences'] == 25
+    assert stats['total_attempts'] == 0
+    assert stats['global_success_rate'] == 0.0
+    assert stats['user_success_rate'] == 0.0
