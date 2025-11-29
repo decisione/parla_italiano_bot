@@ -93,6 +93,9 @@ docker
 - Migration-based database schema management
 - File-based logging with structured output
 - User upsert pattern: get_or_create_user handles atomic insert/update of user profile and access timestamps
+- Modular database layer: Repository pattern with connection.py, users.py, base.py, sentences.py modules
+- Shared utilities pattern: Base module provides validation and LLM integration for multiple features
+- Backward compatibility: Package exports maintain existing import patterns
 
 ### Planned Patterns
 - Repository pattern for database access

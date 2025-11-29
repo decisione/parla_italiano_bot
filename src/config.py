@@ -194,6 +194,11 @@ def get_llm_config() -> LLMConfig:
     return get_config().llm
 
 
+def get_database_config() -> DatabaseConfig:
+    """Get database configuration"""
+    return get_config().database
+
+
 def get_bot_config() -> BotConfig:
     """Get bot configuration"""
     return get_config().bot

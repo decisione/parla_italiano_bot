@@ -1,10 +1,15 @@
 """Unit tests for database functions (mocked asyncpg, no live DB required)"""
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from aiogram.types import User
-from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result, is_valid_italian_sentence
+from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result
+from src.database.base import is_valid_italian_sentence
 
 @pytest.fixture(scope="session")
 def event_loop():

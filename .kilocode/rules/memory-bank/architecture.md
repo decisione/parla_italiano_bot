@@ -59,8 +59,12 @@ parla_italiano_bot/
 2. **Bot Handler**: Processes Telegram messages and callbacks (src/bot.py)
 3. **Game Logic**: Manages game state and word ordering (in-memory in src/bot.py)
 4. **Data Storage**: PostgreSQL database with tables for sentences, phrases, and users
-5. **Database Layer**: Handles PostgreSQL operations (src/database.py)
-6. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database.py)
+5. **Database Layer**: Modular database operations with separate repositories
+   - **Connection Module**: Database connections, migrations, table counts (src/database/connection.py)
+   - **User Module**: User profile management operations (src/database/users.py)
+   - **Base Module**: Shared utilities, validation, LLM integration (src/database/base.py)
+   - **Sentences Module**: Sentence feature operations (src/database/sentences.py)
+6. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database/users.py)
 
 ### Planned Components
 1. **Bot Handler**: Processes Telegram messages and callbacks
