@@ -9,6 +9,12 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 - **Interactive Interface**: Simple and intuitive interface with inline keyboard buttons
 - **Progressive Learning**: Continuously practice with new sentences
 
+## Bot commands
+
+/start - Avvia il bot
+/help - Spiega cosa fa il bot
+/stats - Mostra alcune statistiche
+
 ## Installation
 
 ### Prerequisites

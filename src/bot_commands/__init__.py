@@ -7,5 +7,6 @@ including start, help, and other user interactions.
 
 from .start import create_start_command_handler
 from .echo import create_echo_handler
+from .help import create_help_command_handler
 
-__all__ = ['create_start_command_handler', 'create_echo_handler']
+__all__ = ['create_start_command_handler', 'create_echo_handler', 'create_help_command_handler']

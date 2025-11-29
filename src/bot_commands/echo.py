@@ -37,6 +37,6 @@ def create_echo_handler():
             message: Telegram message object
         """
         await get_or_create_user(message.from_user)
-        await message.answer(f"You said: {message.text}")
-    
+        await message.answer(f"<blockquote>{message.text}</blockquote>\n\nPer ora niente chat interattiva, forse più avanti.", parse_mode="HTML")
+
     return echo_message_handler

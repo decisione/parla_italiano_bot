@@ -13,7 +13,7 @@ from typing import Optional
 import sys
 
 from aiogram import Bot, Dispatcher, Router, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, Message
 
 # Add the project root to Python path for imports
@@ -26,14 +26,14 @@ try:
     from database import get_schema_migrations, get_table_counts
     from state.learning_state import LearningState
     from exercises.sentence_ordering import SentenceOrderingExercise
-    from bot_commands import create_start_command_handler, create_echo_handler
+    from bot_commands import create_start_command_handler, create_echo_handler, create_help_command_handler
 except ImportError:
     # Fallback for Docker environment
     from src.config import get_bot_config, get_logging_config
     from src.database import get_schema_migrations, get_table_counts
     from src.state.learning_state import LearningState
     from src.exercises.sentence_ordering import SentenceOrderingExercise
-    from src.bot_commands import create_start_command_handler, create_echo_handler
+    from src.bot_commands import create_start_command_handler, create_echo_handler, create_help_command_handler
 
 
 class ParlaItalianoBot:
@@ -71,6 +71,10 @@ class ParlaItalianoBot:
         # Create and register /start command handler
         start_handler = create_start_command_handler(self.sentence_exercise)
         self.router.message(CommandStart())(start_handler)
+        
+        # Create and register /help command handler
+        help_handler = create_help_command_handler()
+        self.router.message(Command("help"))(help_handler)
     
     def _setup_callback_handlers(self) -> None:
         """Setup callback query handlers."""
