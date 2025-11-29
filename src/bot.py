@@ -112,7 +112,7 @@ async def handle_word_selection(callback: CallbackQuery):
             emoji = random.choice(emojis)
            
             await callback.message.edit_text(
-                f"{emoji} {phrase} {emoji}\n<blockquote>{' '.join(original_words)}</blockquote>\n",
+                f"{emoji} {phrase} {emoji}\n\n<blockquote>{' '.join(original_words)}</blockquote>\n",
                 parse_mode="HTML"
             )
             await callback.answer("Corretto!")
@@ -122,7 +122,7 @@ async def handle_word_selection(callback: CallbackQuery):
             emojis = ["❌", "✖️", "⚠️", "⁉️", "🆘", "🚫", "📛", "🛑", "⛔", "🌩️", "🪫", "🩻", "🧱", "🤚", "👎", "😞", "😪", "😣", "🥲"]
             emoji = random.choice(emojis)
             await callback.message.edit_text(
-                f"{emoji} {phrase}\nLa tua risposta: <blockquote>{' '.join(selected_order)}</blockquote>\nOrdine corretto: <blockquote>{' '.join(original_words)}</blockquote>\n",
+                f"{emoji} {phrase}\n\nLa tua risposta: <blockquote>{' '.join(selected_order)}</blockquote>\nOrdine corretto: <blockquote>{' '.join(original_words)}</blockquote>\n",
                 parse_mode="HTML"
             )
             await callback.answer("Ordine sbagliato!")
