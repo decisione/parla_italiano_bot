@@ -17,13 +17,23 @@ from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, Message
 
 # Add the project root to Python path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+sys.path.insert(0, project_root)
 
-from config import get_bot_config, get_logging_config
-from database import get_schema_migrations, get_table_counts
-from state.learning_state import LearningState
-from exercises.sentence_ordering import SentenceOrderingExercise
-from bot_commands import create_start_command_handler, create_echo_handler
+try:
+    from config import get_bot_config, get_logging_config
+    from database import get_schema_migrations, get_table_counts
+    from state.learning_state import LearningState
+    from exercises.sentence_ordering import SentenceOrderingExercise
+    from bot_commands import create_start_command_handler, create_echo_handler
+except ImportError:
+    # Fallback for Docker environment
+    from src.config import get_bot_config, get_logging_config
+    from src.database import get_schema_migrations, get_table_counts
+    from src.state.learning_state import LearningState
+    from src.exercises.sentence_ordering import SentenceOrderingExercise
+    from src.bot_commands import create_start_command_handler, create_echo_handler
 
 
 class ParlaItalianoBot:

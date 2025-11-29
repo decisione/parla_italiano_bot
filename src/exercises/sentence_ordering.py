@@ -12,15 +12,29 @@ from aiogram.types import CallbackQuery, Message
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.database import (
-    get_random_sentence,
-    get_random_encouraging_phrase,
-    get_random_error_phrase,
-    store_sentence_result,
-    get_or_create_user
-)
+# Add the project root to Python path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+sys.path.insert(0, project_root)
+
+try:
+    from src.database import (
+        get_random_sentence,
+        get_random_encouraging_phrase,
+        get_random_error_phrase,
+        store_sentence_result,
+        get_or_create_user
+    )
+except ImportError:
+    # Fallback for Docker environment
+    from database import (
+        get_random_sentence,
+        get_random_encouraging_phrase,
+        get_random_error_phrase,
+        store_sentence_result,
+        get_or_create_user
+    )
 
 
 class SentenceOrderingExercise:
