@@ -8,6 +8,7 @@ parla_italiano_bot/
 ├── src/
 │   ├── __init__.py
 │   ├── bot.py              # Main bot implementation
+│   ├── config.py           # Configuration management
 │   ├── database.py         # Database operations
 ├── tests/
 │   ├── __init__.py
@@ -16,6 +17,7 @@ parla_italiano_bot/
 │   ├── test_database.py
 ├── migrations/
 │   └── 001_initial.sql     # Database schema and initial data
+├── config.ini              # Configuration parameters
 ├── deploy.sh               # Deployment script
 ├── docker-compose.yml      # Docker configuration
 ├── Dockerfile              # Docker image definition
@@ -25,36 +27,6 @@ parla_italiano_bot/
 ├── run_migrations.sh       # Database migration runner
 ├── .gitignore              # Git ignore rules
 └── .kilocode/              # Memory bank and rules
-```
-
-### Planned Structure
-```
-parla_italiano_bot/
-├── src/
-│   ├── __init__.py
-│   ├── bot.py              # Main bot implementation
-│   ├── config.py           # Configuration management
-│   ├── database.py         # Database operations
-│   ├── models.py           # Data models
-│   ├── game_logic.py       # Game logic implementation
-│   ├── auth.py             # User authentication
-│   ├── content_manager.py  # Content management
-│   └── llm_service.py      # LLM integration
-├── tests/
-│   ├── __init__.py
-│   ├── test_bot.py
-│   ├── test_game_logic.py
-│   └── test_database.py
-├── config/
-│   ├── config.ini          # Main configuration
-│   └── docker-compose.yml  # Docker configuration
-├── scripts/
-│   ├── deploy.sh           # Deployment script
-│   └── update.sh           # Update script
-├── requirements.txt        # Python dependencies
-├── Dockerfile             # Docker configuration
-├── .gitignore             # Git ignore rules
-└── README.md              # Project documentation
 ```
 
 ## Key Technical Decisions
@@ -69,6 +41,8 @@ parla_italiano_bot/
 - Automated migration execution
 - Modular Python package structure (partial)
 - Testing framework with pytest
+- Centralized configuration management with pydantic models
+- Separation of sensitive (env) and non-sensitive (config.ini) configuration
 
 ### Planned Implementation
 - PostgreSQL for persistent data storage
@@ -81,11 +55,12 @@ parla_italiano_bot/
 ## Component Relationships
 
 ### Current Components
-1. **Bot Handler**: Processes Telegram messages and callbacks (src/bot.py)
-2. **Game Logic**: Manages game state and word ordering (in-memory in src/bot.py)
-3. **Data Storage**: PostgreSQL database with tables for sentences, phrases, and users
-4. **Database Layer**: Handles PostgreSQL operations (src/database.py)
-5. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database.py)
+1. **Configuration Manager**: Centralized configuration loading and validation (src/config.py)
+2. **Bot Handler**: Processes Telegram messages and callbacks (src/bot.py)
+3. **Game Logic**: Manages game state and word ordering (in-memory in src/bot.py)
+4. **Data Storage**: PostgreSQL database with tables for sentences, phrases, and users
+5. **Database Layer**: Handles PostgreSQL operations (src/database.py)
+6. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database.py)
 
 ### Planned Components
 1. **Bot Handler**: Processes Telegram messages and callbacks

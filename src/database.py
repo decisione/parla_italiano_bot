@@ -1,40 +1,25 @@
 import asyncpg
 import asyncio
-import os
 import re
 import logging
 import random
 import time
 from typing import List
-from dotenv import load_dotenv
 from aiogram.types import User
 import pydantic
 from openai import OpenAI
 import instructor
 
-load_dotenv()
-
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = int(os.getenv("DB_PORT", 5432))
-DB_NAME = os.getenv("DB_NAME", "parla_italiano")
-DB_USER = os.getenv("DB_USER", "parla_user")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-
-# Configuration for OpenAI API
-API_URL = "https://openrouter.ai/api/v1"
-API_KEY = os.getenv("API_KEY")
-MODEL_NAME = "qwen/qwen3-235b-a22b:free"
-
-# Italian character set including accented vowels
-ITALIAN_CHARACTERS = set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+from src.config import get_database_config, get_llm_config, get_validation_config
 
 # SETUP
 
 async def get_schema_migrations():
     """Get all schema migrations for logging"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         rows = await conn.fetch("SELECT version, applied_at FROM schema_migrations ORDER BY applied_at")
@@ -45,9 +30,10 @@ async def get_schema_migrations():
 
 async def get_table_counts():
     """Get row counts for all content tables"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         counts = {}
@@ -62,9 +48,10 @@ async def get_table_counts():
 
 async def get_or_create_user(user: User) -> int:
     """Get or create user record. Updates profile fields and last_access_at if exists, inserts with first_access_at if new."""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         # Check if user exists
@@ -99,9 +86,10 @@ async def get_or_create_user(user: User) -> int:
 
 async def get_random_encouraging_phrase() -> str:
     """Get a random encouraging phrase from the database"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         row = await conn.fetchrow("SELECT phrase FROM encouraging_phrases ORDER BY RANDOM() LIMIT 1")
@@ -112,9 +100,10 @@ async def get_random_encouraging_phrase() -> str:
 
 async def get_random_error_phrase() -> str:
     """Get a random error phrase from the database"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         row = await conn.fetchrow("SELECT phrase FROM error_phrases ORDER BY RANDOM() LIMIT 1")
@@ -127,9 +116,10 @@ async def get_random_error_phrase() -> str:
 
 async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
     """Get a random Italian sentence ID and text from the database, preferring sentences the user has not successfully completed"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         # Check remaining uncompleted count for replenishment
@@ -167,9 +157,10 @@ async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
 
 async def store_sentence_result(user_id: int, sentence_id: int, is_success: bool) -> None:
     """Store a sentence result for a user"""
+    db_config = get_database_config()
     conn = await asyncpg.connect(
-        host=DB_HOST, port=DB_PORT, database=DB_NAME,
-        user=DB_USER, password=DB_PASSWORD
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
     )
     try:
         await conn.execute("""
@@ -191,6 +182,8 @@ def is_valid_italian_sentence(sentence: str) -> bool:
     2. Has between 3 and 10 words
     3. Does not contain duplicate words
     """
+    validation_config = get_validation_config()
+    
     # Check word count
     word_count = len(sentence.split())
     if word_count < 3 or word_count > 10:
@@ -204,7 +197,7 @@ def is_valid_italian_sentence(sentence: str) -> bool:
     # Check character set
     sentence_lower = sentence.lower()
     for char in sentence_lower:
-        if char not in ITALIAN_CHARACTERS:
+        if char not in validation_config.italian_characters:
             return False
     
     return True
@@ -218,9 +211,12 @@ async def sentence_replenishment(user_id: int) -> None:
     """Generate Italian sentences using OpenAI API and store them in the database"""
     logging.info(f"Starting sentence replenishment for user {user_id}")
     
+    # Get LLM configuration
+    llm_config = get_llm_config()
+    
     # Check if API key is available
-    if not API_KEY:
-        logging.error("API_KEY not found in environment variables, cannot generate sentences")
+    if not llm_config.api_key:
+        logging.error("LLM_API_KEY not found in environment variables, cannot generate sentences")
         return
     
     max_retries = 5
@@ -229,7 +225,7 @@ async def sentence_replenishment(user_id: int) -> None:
     for attempt in range(max_retries):
         try:
             # Initialize OpenAI client with instructor patch
-            client = instructor.patch(OpenAI(base_url=API_URL, api_key=API_KEY))
+            client = instructor.patch(OpenAI(base_url=llm_config.api_url, api_key=llm_config.api_key))
             
             # System prompt to guide the LLM
             system_prompt = """Generate Italian sentences for language learning.
@@ -249,12 +245,12 @@ Examples of appropriate sentences:
 Please generate exactly 25 sentences in the format requested."""
             
             logging.info(f"Connecting to OpenAI API for user {user_id} (attempt {attempt + 1}/{max_retries})")
-            logging.info(f"Using model: {MODEL_NAME}")
+            logging.info(f"Using model: {llm_config.model_name}")
             logging.info("Generating Italian sentences...")
             
             # Call the LLM with structured output
             response: SentenceList = client.chat.completions.create(
-                model=MODEL_NAME,
+                model=llm_config.model_name,
                 response_model=SentenceList,
                 messages=[
                     {"role": "system", "content": system_prompt},

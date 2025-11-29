@@ -8,16 +8,17 @@ from aiogram.types import Message, CallbackQuery
 import asyncio
 import random
 import logging
-from dotenv import load_dotenv
-from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts, get_or_create_user, store_sentence_result
+import os
 
-load_dotenv()
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+from src.database import get_random_sentence, get_random_encouraging_phrase, get_random_error_phrase, get_schema_migrations, get_table_counts, get_or_create_user, store_sentence_result
+from src.config import get_bot_config, get_logging_config
 
 # User game state
 user_game_state = {}
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+# Initialize bot with configuration
+bot_config = get_bot_config()
+bot = Bot(token=bot_config.token)
 dp = Dispatcher()
 router = Router()
 
@@ -132,7 +133,7 @@ async def handle_word_selection(callback: CallbackQuery):
             await store_sentence_result(user_id, sentence_id, original_words == selected_order)
         
         # Start next round after a short delay
-        #await asyncio.sleep(1)
+        await asyncio.sleep(1)
         await start_new_round(callback.message, user_id)
     else:
         # Create keyboard with remaining buttons
@@ -159,9 +160,12 @@ dp.include_router(router)
 
 async def main():
     # Setup logging
-    os.makedirs('/app/logs', exist_ok=True)
+    logging_config = get_logging_config()
+    os.makedirs(logging_config.log_dir, exist_ok=True)
+    log_file = os.path.join(logging_config.log_dir, 'bot.log')
+    
     logging.basicConfig(
-        filename='/app/logs/bot.log',
+        filename=log_file,
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s'
     )

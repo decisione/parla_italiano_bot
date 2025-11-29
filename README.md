@@ -85,12 +85,51 @@ docker image prune
 pytest
 ```
 
+## Configuration
+
+The application uses a centralized configuration system that separates sensitive data from non-sensitive configuration:
+
+### Environment Variables (.env file)
+Sensitive configuration parameters should be stored in a `.env` file:
+
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+DB_PASSWORD=your_database_password
+LLM_API_KEY=your_openai_api_key
+LOG_DIR=/path/to/logs
+```
+
+### Configuration File (config.ini)
+Non-sensitive configuration parameters are stored in `config.ini`:
+
+```ini
+[Database]
+DB_HOST = localhost
+DB_PORT = 5432
+DB_NAME = parla_italiano
+DB_USER = parla_user
+
+[LLM]
+LLM_API_URL = https://openrouter.ai/api/v1
+LLM_MODEL_NAME = qwen/qwen3-235b-a22b:free
+
+[Validation]
+ITALIAN_CHARACTERS = abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-
+
+[Logging]
+LOG_DIR = ./logs
+```
+
+### Configuration Structure
+The configuration is managed through `src/config.py` which provides:
+- Type-safe configuration models using Pydantic
+- Automatic loading from both `.env` and `config.ini`
+- Environment variables take precedence over INI file values
+- Validation and error handling for missing required configuration
+
 ## Future Development
 
 The project is planned to evolve with the following features:
-
-### Configuration
-- Configuration management system using config.ini
 
 ### Authorization
 - User authorization system
