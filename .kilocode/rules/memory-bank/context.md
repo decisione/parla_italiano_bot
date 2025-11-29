@@ -4,13 +4,13 @@
 The project has moved beyond the Proof of Concept phase and now has a solid, production-ready architecture. The current focus is on expanding functionality with additional bot commands and features while maintaining the robust foundation that has been established.
 
 ## Recent Changes
-- Initial implementation of the word ordering game using aiogram
+- Initial implementation of the word ordering exercise using aiogram
 - Basic UI with inline keyboard buttons for word selection
 - Database-driven content storage with PostgreSQL
-- Simple game state management using in-memory dictionary
+- Simple learning state management using in-memory dictionary
 - Implement Docker containerization for easy deployment
 - Create deployment scripts for remote hosting
-- Set up pytest testing framework with unit tests for bot functions and game logic
+- Set up pytest testing framework with unit tests for bot functions and learning logic
 - Implement PostgreSQL database with migration system for persistent storage
 - Create initial database schema with tables for Italian sentences, encouraging phrases, and error phrases
 - Set up automated migration execution for development and production environments
@@ -29,10 +29,21 @@ The project has moved beyond the Proof of Concept phase and now has a solid, pro
 - Updated config.ini with proper section structure (Database, LLM, Validation, Logging)
 - Added comprehensive configuration tests in tests/test_config.py
 - Updated documentation to reflect new configuration structure
+- **Bot Application Refactoring Complete**: Successfully refactored monolithic src/bot.py (190 lines) into modular architecture:
+  - Created src/bot_commands/ directory with start.py and echo.py handlers
+  - Created src/exercises/sentence_ordering.py for sentence ordering exercise logic
+  - Created src/state/learning_state.py for proper user learning state management (replacing global state)
+  - Created src/application/bot_app.py main application orchestrator with ParlaItalianoBot class
+  - Simplified src/bot.py to 9-line entry point that imports and runs the application
+  - Updated all imports and dependencies across new modules
+  - Updated tests to reflect new module structure (test_bot.py, test_learning_state.py)
+  - Fixed naming conventions to avoid inappropriate "game" terminology
+  - All tests pass successfully
+  - Maintained full backward compatibility and existing functionality
 
 ## Next Steps
 - Implement additional bot commands beyond /start
 - Develop user authorization system
 - Add "stories" mode for interactive learning
-- Enhance game mechanics and user experience
+- Enhance learning exercise mechanics and user experience
 - Add stats for users to show their progress
