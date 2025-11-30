@@ -180,8 +180,12 @@ class TestConfigValidation:
 
     def test_validation_config_validation(self):
         """Test validation configuration validation"""
-        config = ValidationConfig(italian_characters=set('abcdefghil .,;:!'))
+        config = ValidationConfig(
+            italian_characters=set('abcdefghil .,;:!'),
+            russian_characters=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя .,;:!?\'-')
+        )
         assert config.italian_characters == set('abcdefghil .,;:!')
+        assert len(config.russian_characters) > 0
 
     def test_logging_config_validation(self):
         """Test logging configuration validation"""
@@ -204,7 +208,10 @@ class TestConfigValidation:
                 model_name='qwen/qwen3-235b-a22b:free'
             ),
             bot=BotConfig(token='test_bot_token'),
-            validation=ValidationConfig(italian_characters=set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')),
+            validation=ValidationConfig(
+                italian_characters=set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-'),
+                russian_characters=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя .,;:!?\'-')
+            ),
             logging=LoggingConfig(log_dir='./logs')
         )
         

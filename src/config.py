@@ -42,6 +42,7 @@ class BotConfig(BaseModel):
 class ValidationConfig(BaseModel):
     """Validation configuration"""
     italian_characters: Set[str] = Field(..., description="Valid Italian characters for sentence validation")
+    russian_characters: Set[str] = Field(..., description="Valid Russian characters for sentence validation")
 
 
 class LoggingConfig(BaseModel):
@@ -110,9 +111,12 @@ def load_config_from_ini(config_file: str = 'config.ini') -> dict:
     # Load validation configuration
     if 'Validation' in config:
         italian_chars_str = config['Validation'].get('ITALIAN_CHARACTERS',
-                                                   'abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+                                                   'abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-—')
+        russian_chars_str = config['Validation'].get('RUSSIAN_CHARACTERS',
+                                                   'абвгдеёжзийклмнопрстуфхцчшщъыьэюя .,;:!?\'-—')
         ini_config['validation'] = {
-            'italian_characters': set(italian_chars_str)
+            'italian_characters': set(italian_chars_str),
+            'russian_characters': set(russian_chars_str)
         }
     
     # Load logging configuration

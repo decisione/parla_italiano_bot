@@ -51,10 +51,12 @@ def get_llm_config():
         return MockLLMConfig()
 from .base import (
     is_valid_italian_sentence,
+    is_valid_russian_sentence,
     clean_sentence,
     execute_with_retry,
     execute_with_retry_sync,
-    SentenceList
+    SentenceList,
+    SentenceTranslationList
 )
 
 
@@ -76,6 +78,7 @@ async def get_random_sentence(user_id: int) -> tuple[int | None, str]:
         """, user_id)
         unused_count = count_row['unused_count'] if count_row else 0
         if unused_count < 10:
+#        if 1==1: # TEMPORARY: only for manual testing
             asyncio.create_task(sentence_replenishment(user_id))
 
         # Prefer sentences not successfully completed by this user
@@ -144,7 +147,7 @@ async def get_random_error_phrase() -> str:
 
 
 async def sentence_replenishment(user_id: int) -> None:
-    """Generate Italian sentences using OpenAI API and store them in the database"""
+    """Generate Italian sentences with Russian translations using OpenAI API and store them in the database"""
     logging.info(f"🔄 Starting sentence replenishment for user {user_id}")
     start_time = time.time()
     
@@ -156,8 +159,8 @@ async def sentence_replenishment(user_id: int) -> None:
         logging.error("LLM_API_KEY not found in environment variables, cannot generate sentences")
         return
     
-    def generate_sentences():
-        """Generate sentences using LLM"""
+    def generate_sentences_with_translations():
+        """Generate sentences with Russian translations using LLM"""
         # Initialize OpenAI client with instructor patch
         # Since we're already in an async context, we need to get the client synchronously
         llm_config = get_llm_config()
@@ -172,21 +175,26 @@ async def sentence_replenishment(user_id: int) -> None:
         client = instructor.patch(OpenAI(base_url=llm_config.api_url, api_key=llm_config.api_key))
         
         # System prompt to guide the LLM
-        system_prompt = """Generate Italian sentences for language learning.
-Each sentence should:
-- Be in Italian (not translated from English)
-- Contain 3 to 10 words
-- Be grammatically correct
-- Use various and different topics
-- Make some of them fun! Make some jokes!
-- Use standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
+        system_prompt = """Generate Italian sentences with Russian translations for language learning.
+Each entry should include:
+1. An Italian sentence that:
+   - Is in Italian (not translated from English)
+   - Contains 3 to 10 words
+   - Is grammatically correct
+   - Uses various and different topics
+   - Make some of them fun! Make some jokes!
+   - Uses standard Italian characters including accented vowels (à, è, é, ì, í, î, ò, ó, ù, ú)
+2. A Russian translation that:
+   - Is a proper Russian translation of the Italian sentence
+   - Uses standard Russian characters including punctuation
+   - Is grammatically correct
 
-Examples of appropriate sentences:
-- "L'unico mobile presente nella stanza era il nonno."
-- "Questa stanza è troppo costosa, dormirò per strada."
-- "Perché non ti piace Marco, ha la barba?"
+Examples of appropriate entries:
+- Italian: "L'unico mobile presente nella stanza era il nonno." | Russian: "Единственной мебелью в комнате был дедушка."
+- Italian: "Questa stanza è troppo costosa, dormirò per strada." | Russian: "Этот номер слишком дорогой, я буду спать на улице."
+- Italian: "Perché non ti piace Marco, ha la barba?" | Russian: "Почему тебе не нравится Марко, у него же есть борода?"
 
-Please generate exactly 25 sentences in the format requested."""
+Please generate from 25 to 35 sentence pairs in the format requested."""
         
         logging.info(f"Connecting to OpenAI API for user {user_id}")
         logging.info(f"Using model: {llm_config.model_name}")
@@ -202,9 +210,9 @@ Please generate exactly 25 sentences in the format requested."""
             # In newer versions of instructor, the create method is synchronous, not async
             logging.info(f"🌐 Making LLM API request to {llm_config.api_url} with model {llm_config.model_name}")
             api_start_time = time.time()
-            response: SentenceList = client.chat.completions.create(
+            response: SentenceTranslationList = client.chat.completions.create(
                 model=llm_config.model_name,
-                response_model=SentenceList,
+                response_model=SentenceTranslationList,
                 messages=[
                     {"role": "system", "content": system_prompt},
                 ]
@@ -212,7 +220,7 @@ Please generate exactly 25 sentences in the format requested."""
             api_duration = time.time() - api_start_time
             logging.info(f"🌐 LLM API request completed in {api_duration:.2f} seconds")
             logging.debug(f"LLM API call successful, response type: {type(response)}")
-            logging.debug(f"Generated sentences count: {len(response.sentences)}")
+            logging.debug(f"Generated sentence pairs count: {len(response.sentences)}")
             
         except Exception as e:
             # Log concise error message without verbose details
@@ -235,20 +243,35 @@ Please generate exactly 25 sentences in the format requested."""
                 content = raw_response.choices[0].message.content
                 logging.debug(f"Raw response content: {content}")
                 
-                # Parse the content manually into sentences
-                # Assuming the LLM returns sentences separated by newlines or numbered list
-                sentences = []
+                # Parse the content manually into sentence pairs
+                # Assuming the LLM returns sentences in format: "Italian: ... | Russian: ..."
+                sentence_pairs = []
                 for line in content.split('\n'):
                     line = line.strip()
                     if line:
-                        # Remove numbering if present (e.g., "1. ", "2) ", etc.)
+                        # Try to parse Italian/Russian pairs
                         import re
-                        line = re.sub(r'^\s*\d+[\.\)\-]\s*', '', line)
-                        if line:
-                            sentences.append(line)
+                        italian_match = re.search(r'Italian:\s*(.+?)(?:\s*\|\s*Russian:|$)', line, re.IGNORECASE)
+                        russian_match = re.search(r'Russian:\s*(.+?)(?:\s*\||$)', line, re.IGNORECASE)
+                        
+                        if italian_match and russian_match:
+                            italian_sentence = italian_match.group(1).strip()
+                            russian_sentence = russian_match.group(1).strip()
+                            # Remove quotes if present
+                            italian_sentence = italian_sentence.strip('"\'')
+                            russian_sentence = russian_sentence.strip('"\'')
+                            if italian_sentence and russian_sentence:
+                                sentence_pairs.append({
+                                    'italian': italian_sentence,
+                                    'russian': russian_sentence
+                                })
                 
-                response = SentenceList(sentences=sentences)
-                logging.debug(f"Parsed {len(sentences)} sentences manually")
+                # Convert to SentenceTranslationList format
+                response = SentenceTranslationList(sentences=[
+                    type('SentenceWithTranslation', (), {'italian': pair['italian'], 'russian': pair['russian']})
+                    for pair in sentence_pairs
+                ])
+                logging.debug(f"Parsed {len(sentence_pairs)} sentence pairs manually")
                 
             except Exception as e2:
                 # Log concise fallback error
@@ -256,7 +279,7 @@ Please generate exactly 25 sentences in the format requested."""
                 logging.error(f"Fallback approach also failed: {fallback_error}")
                 raise
         
-        logging.info(f"Generated {len(response.sentences)} sentences from API for user {user_id}")
+        logging.info(f"Generated {len(response.sentences)} sentence pairs from API for user {user_id}")
         return response.sentences
     
     try:
@@ -269,41 +292,57 @@ Please generate exactly 25 sentences in the format requested."""
         loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Run the sync function in a thread
-            generated_sentences = await loop.run_in_executor(
+            generated_sentence_pairs = await loop.run_in_executor(
                 executor,
                 execute_with_retry_sync,
-                generate_sentences
+                generate_sentences_with_translations
             )
         
         llm_duration = time.time() - llm_start_time
         logging.info(f"✅ LLM API call completed for user {user_id} in {llm_duration:.2f} seconds")
         
         # Validate and clean sentences
-        valid_sentences = []
-        invalid_sentences = []
+        valid_sentence_pairs = []
+        invalid_sentence_pairs = []
         
-        for i, sentence in enumerate(generated_sentences, 1):
-            cleaned = clean_sentence(sentence)
-            
-            if is_valid_italian_sentence(cleaned):
-                valid_sentences.append(cleaned)
-                logging.debug(f"Valid sentence {i}: '{cleaned}'")
+        for i, sentence_pair in enumerate(generated_sentence_pairs, 1):
+            # Handle both object and dict formats
+            if hasattr(sentence_pair, 'italian') and hasattr(sentence_pair, 'russian'):
+                italian_sentence = sentence_pair.italian
+                russian_sentence = sentence_pair.russian
+            elif isinstance(sentence_pair, dict):
+                italian_sentence = sentence_pair.get('italian', '')
+                russian_sentence = sentence_pair.get('russian', '')
             else:
-                invalid_sentences.append((i, cleaned))
-                word_count = len(cleaned.split())
-                logging.debug(f"Invalid sentence {i}: '{cleaned}'")
+                invalid_sentence_pairs.append((i, str(sentence_pair)))
+                continue
+            
+            cleaned_italian = clean_sentence(italian_sentence)
+            cleaned_russian = clean_sentence(russian_sentence)
+            
+            # Validate both Italian and Russian sentences
+            if (is_valid_italian_sentence(cleaned_italian) and
+                is_valid_russian_sentence(cleaned_russian)):
+                valid_sentence_pairs.append({
+                    'italian': cleaned_italian,
+                    'russian': cleaned_russian
+                })
+                logging.debug(f"Valid sentence pair {i}: '{cleaned_italian}' | '{cleaned_russian}'")
+            else:
+                invalid_sentence_pairs.append((i, cleaned_italian, cleaned_russian))
+                logging.debug(f"Invalid sentence pair {i}: '{cleaned_italian}' | '{cleaned_russian}'")
         
         logging.info(f"Validation Results for user {user_id}:")
-        logging.info(f"Valid sentences: {len(valid_sentences)}")
-        logging.info(f"Invalid sentences: {len(invalid_sentences)}")
+        logging.info(f"Valid sentence pairs: {len(valid_sentence_pairs)}")
+        logging.info(f"Invalid sentence pairs: {len(invalid_sentence_pairs)}")
         
-        if invalid_sentences:
-            logging.info("Invalid sentences details:")
-            for i, sentence in invalid_sentences:
-                logging.info(f"  Sentence {i}: '{sentence}'")
+        if invalid_sentence_pairs:
+            logging.info("Invalid sentence pairs details:")
+            for i, italian, russian in invalid_sentence_pairs:
+                logging.info(f"  Pair {i}: '{italian}' | '{russian}'")
         
         # Store valid sentences in the database
-        if valid_sentences:
+        if valid_sentence_pairs:
             logging.info(f"💾 Starting database storage for user {user_id}...")
             db_start_time = time.time()
             db_config = get_database_config()
@@ -312,22 +351,25 @@ Please generate exactly 25 sentences in the format requested."""
                 user=db_config.user, password=db_config.password
             )
             try:
-                for sentence in valid_sentences:
+                for pair in valid_sentence_pairs:
+                    italian_sentence = pair['italian']
+                    russian_sentence = pair['russian']
+                    
                     # Check if sentence already exists to avoid duplicates
                     existing = await conn.fetchrow(
                         "SELECT id FROM italian_sentences WHERE sentence = $1",
-                        sentence
+                        italian_sentence
                     )
                     if not existing:
                         await conn.execute(
-                            "INSERT INTO italian_sentences (sentence) VALUES ($1)",
-                            sentence
+                            "INSERT INTO italian_sentences (sentence, sentence_rus) VALUES ($1, $2)",
+                            italian_sentence, russian_sentence
                         )
-                        logging.debug(f"Added sentence to database: '{sentence}'")
+                        logging.debug(f"Added sentence pair to database: '{italian_sentence}' | '{russian_sentence}'")
                     else:
-                        logging.debug(f"Skipped duplicate sentence: '{sentence}'")
+                        logging.debug(f"Skipped duplicate sentence: '{italian_sentence}'")
                 
-                logging.info(f"✅ Successfully stored {len(valid_sentences)} valid sentences in database for user {user_id}")
+                logging.info(f"✅ Successfully stored {len(valid_sentence_pairs)} valid sentence pairs in database for user {user_id}")
                 
             finally:
                 await conn.close()

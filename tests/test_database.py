@@ -17,6 +17,7 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
 async def test_get_table_counts_all_tables(mock_connect):
@@ -44,6 +45,7 @@ async def test_get_table_counts_all_tables(mock_connect):
     mock_conn.fetchrow.assert_any_call("SELECT COUNT(*) as count FROM users")
     mock_conn.fetchrow.assert_any_call("SELECT COUNT(*) as count FROM italian_sentences_results")
 
+
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
 async def test_get_or_create_user_new_insert(mock_connect):
@@ -62,6 +64,7 @@ async def test_get_or_create_user_new_insert(mock_connect):
     assert call_args[1] == 12345  # user.id
     assert call_args[2] == "NewTest"  # user.first_name
 
+
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
 async def test_get_or_create_user_existing_update(mock_connect):
@@ -79,6 +82,8 @@ async def test_get_or_create_user_existing_update(mock_connect):
     assert call_args[1] == 12345  # user.id
     assert call_args[2] == "UpdatedTest"  # user.first_name
     assert call_args[4] == "testuser"  # user.username
+
+
 @pytest.mark.asyncio
 @patch('src.database.asyncpg.connect')
 async def test_get_random_sentence_prefer_uncompleted(mock_connect):

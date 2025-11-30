@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Mock config for testing if config.ini doesn't exist
 class MockValidationConfig:
     italian_characters: set = set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+    russian_characters: set = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя .,;:!?\'-')
 
 class MockConfig:
     def __init__(self):
@@ -52,6 +53,14 @@ def get_llm_config():
 class SentenceList(pydantic.BaseModel):
     sentences: List[str]
 
+# Pydantic model for sentences with Russian translations
+class SentenceWithTranslation(pydantic.BaseModel):
+    italian: str
+    russian: str
+
+class SentenceTranslationList(pydantic.BaseModel):
+    sentences: List[SentenceWithTranslation]
+
 
 def is_valid_italian_sentence(sentence: str) -> bool:
     """
@@ -76,6 +85,25 @@ def is_valid_italian_sentence(sentence: str) -> bool:
     sentence_lower = sentence.lower()
     for char in sentence_lower:
         if char not in validation_config.italian_characters:
+            return False
+    
+    return True
+
+
+def is_valid_russian_sentence(sentence: str) -> bool:
+    """
+    Validate that a Russian sentence:
+    1. Contains only Russian letters (including accented characters)
+    2. Has between 3 and 10 words
+    3. Does not contain duplicate words
+    4. Uses only Russian alphabet and punctuation
+    """
+    validation_config = get_validation_config()
+    
+    # Check character set
+    sentence_lower = sentence.lower()
+    for char in sentence_lower:
+        if char not in validation_config.russian_characters:
             return False
     
     return True

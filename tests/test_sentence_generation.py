@@ -34,11 +34,11 @@ async def test_sentence_replenishment_success(mock_llm_config, mock_db_config, m
     mock_db_config.return_value.user = "test_user"
     mock_db_config.return_value.password = "test_pass"
     
-    # Mock retry function to return sentences directly
+    # Mock retry function to return sentence pairs with Russian translations
     mock_retry.return_value = [
-        "Questa è una frase di test.",
-        "Un'altra frase italiana.",
-        "Terza frase di esempio."
+        type('SentenceWithTranslation', (), {'italian': "Questa è una frase di test.", 'russian': "Это тестовое предложение."}),
+        type('SentenceWithTranslation', (), {'italian': "Un'altra frase italiana.", 'russian': "Еще одно итальянское предложение."}),
+        type('SentenceWithTranslation', (), {'italian': "Terza frase di esempio.", 'russian': "Третье примерное предложение."})
     ]
     
     # Mock database connection
@@ -67,7 +67,8 @@ async def test_sentence_replenishment_no_api_key(mock_llm_config):
 @patch('src.database.sentences.get_database_config')
 @patch('src.database.sentences.execute_with_retry_sync')
 @patch('src.database.sentences.asyncpg.connect')
-async def test_sentence_replenishment_with_duplicates(mock_connect, mock_retry, mock_db_config, mock_llm_config):
+@patch('src.database.base.get_validation_config')
+async def test_sentence_replenishment_with_duplicates(mock_validation_config, mock_connect, mock_retry, mock_db_config, mock_llm_config):
     """Test sentence replenishment with duplicate sentences"""
     # Setup mocks
     mock_llm_config.return_value.api_key = "test-key"
@@ -80,11 +81,15 @@ async def test_sentence_replenishment_with_duplicates(mock_connect, mock_retry, 
     mock_db_config.return_value.user = "test_user"
     mock_db_config.return_value.password = "test_pass"
     
-    # Mock retry function to return sentences directly
+    # Setup validation config mock
+    mock_validation_config.return_value.italian_characters = set('abcdefghiklmnopqrstuvzàèéìíîòóùú .,;:!?\'-')
+    mock_validation_config.return_value.russian_characters = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ .,;:!?\'-')
+    
+    # Mock retry function to return sentence pairs with Russian translations
     mock_retry.return_value = [
-        "Questa è una frase di test.",
-        "Un'altra frase italiana.",
-        "Terza frase di esempio."
+        type('SentenceWithTranslation', (), {'italian': "Questa è una frase di test.", 'russian': "Это тестовое предложение."}),
+        type('SentenceWithTranslation', (), {'italian': "Un'altra frase italiana.", 'russian': "Еще одно итальянское предложение."}),
+        type('SentenceWithTranslation', (), {'italian': "Terza frase di esempio.", 'russian': "Третье примерное предложение."})
     ]
     
     # Mock database connection - first sentence exists, others don't
