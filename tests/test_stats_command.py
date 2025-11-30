@@ -62,13 +62,13 @@ async def test_stats_command_handler():
         assert "Utenti totali: <b>10</b>" in response_text
         assert "Frasi totali: <b>50</b> (aggiunto automaticamente se necessario)" in response_text
         assert "Tentativi totali: <b>100</b>" in response_text
-        assert "Tasso di successo globale: <b>75.5%</b>" in response_text
-        assert "Tasso di successo personale: <b>80.0%</b>" in response_text
+        assert "Successo globale: <b>75.5%</b>" in response_text
+        assert ", personale: <b>80.0%</b>" in response_text
         assert "Statistiche di oggi:" in response_text
         assert "Tentativi globali: <b>25</b>" in response_text
         assert "Successo globale: <b>72.0%</b>" in response_text
-        assert "I tuoi tentativi: <b>5</b>" in response_text
-        assert "Il tuo successo: <b>80.0%</b>" in response_text
+        assert ", i tuoi tentativi: <b>5</b>" in response_text
+        assert ", personale: <b>80.0%</b>" in response_text
 
 
 @pytest.mark.asyncio
@@ -112,10 +112,10 @@ async def test_stats_command_handler_zero_attempts():
         assert "Utenti totali: <b>5</b>" in response_text
         assert "Frasi totali: <b>25</b> (aggiunto automaticamente se necessario)" in response_text
         assert "Tentativi totali: <b>0</b>" in response_text
-        assert "Tasso di successo globale: <b>0.0%</b>" in response_text
-        assert "Tasso di successo personale: <b>0.0%</b>" in response_text
+        assert "Successo globale: <b>0.0%</b>" in response_text
+        assert ", personale: <b>0.0%</b>" in response_text
         assert "Statistiche di oggi:" in response_text
         assert "Tentativi globali: <b>0</b>" in response_text
         assert "Successo globale: <b>0.0%</b>" in response_text
-        assert "I tuoi tentativi: <b>0</b>" in response_text
-        assert "Il tuo successo: <b>0.0%</b>" in response_text
+        assert ", i tuoi tentativi: <b>0</b>" in response_text
+        assert ", personale: <b>0.0%</b>" in response_text
