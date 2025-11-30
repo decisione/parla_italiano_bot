@@ -125,6 +125,33 @@ async def get_stats_data(user_id: int):
         await conn.close()
 
 
+async def get_last_attempted_sentence(user_id: int):
+    """Get the last attempted Italian sentence and its Russian translation for a user"""
+    db_config = get_database_config()
+    conn = await asyncpg.connect(
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
+    )
+    try:
+        row = await conn.fetchrow("""
+            SELECT s.sentence, s.sentence_rus
+            FROM italian_sentences_results r
+            JOIN italian_sentences s ON r.italian_sentence_id = s.id
+            WHERE r.user_id = $1
+            ORDER BY r.timestamp DESC
+            LIMIT 1
+        """, user_id)
+        
+        if row:
+            return {
+                'italian': row['sentence'],
+                'russian': row['sentence_rus'] or ''
+            }
+        return None
+    finally:
+        await conn.close()
+
+
 async def get_table_counts():
     """Get row counts for all content tables"""
     db_config = get_database_config()

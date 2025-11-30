@@ -18,7 +18,10 @@ parla_italiano_bot/
 │   ├── bot_commands/       # Telegram command handlers
 │   │   ├── __init__.py
 │   │   ├── start.py        # /start command handler
-│   │   └── echo.py         # Echo message handler
+│   │   ├── echo.py         # Echo message responses
+│   │   ├── stats.py        # /stats command handler
+│   │   ├── help.py         # /help command handler
+│   │   └── rus.py          # /rus command handler (Russian translations)
 │   ├── exercises/          # Learning exercise implementations
 │   │   ├── __init__.py
 │   │   └── sentence_ordering.py  # Sentence word ordering exercise
@@ -33,11 +36,15 @@ parla_italiano_bot/
 │   ├── test_bot.py        # Tests for bot commands and exercise logic
 │   ├── test_learning_state.py  # Tests for learning state management
 │   ├── test_database.py   # Tests for database operations
-│   └── test_config.py     # Tests for configuration management
+│   ├── test_config.py     # Tests for configuration management
+│   ├── test_help_command.py  # Tests for /help command
+│   ├── test_stats_command.py  # Tests for /stats command
+│   └── test_rus_command.py  # Tests for /rus command (Russian translations)
 ├── migrations/
 │   ├── 001_initial.sql    # Initial database schema
 │   ├── 002_users.sql      # Users table
-│   └── 003_results_table.sql  # Results tracking
+│   ├── 003_results_table.sql  # Results tracking
+│   └── 004_russian_translation.sql  # Russian translations column
 ├── config.ini             # Configuration parameters
 ├── deploy.sh              # Deployment script
 ├── docker-compose.yml     # Docker configuration
@@ -63,18 +70,16 @@ parla_italiano_bot/
 - Modular Python package structure (complete)
 - Testing framework with pytest and pytest-asyncio
 - Centralized configuration management with pydantic models
+- LLM integration for dynamic content generation
 - Separation of sensitive (env) and non-sensitive (config.ini) configuration
 - Dependency injection for modularity and testability
 - Clear separation of concerns with dedicated modules
+- Russian translation feature with LLM integration for content generation
+- Structured output models for Italian-Russian sentence pairs
+- Configuration-driven validation for multiple languages
 
 ### Planned Implementation
-- PostgreSQL for persistent data storage
 - User authentication system with token-based access
-- Docker containerization for deployment
-- Configuration management via config.ini
-- LLM integration for dynamic content generation
-- Modular architecture with clear separation of concerns
-- Expandable exercise system for additional learning activities
 
 ## Component Relationships
 
@@ -87,15 +92,18 @@ parla_italiano_bot/
 5. **Command Handlers**: Telegram bot command processing (src/bot_commands/)
    - **Start Handler**: /start command processing (src/bot_commands/start.py)
    - **Echo Handler**: Generic message responses (src/bot_commands/echo.py)
-6. **Data Storage**: PostgreSQL database with tables for sentences, phrases, and users
+   - **Stats Handler**: /stats command processing (src/bot_commands/stats.py)
+   - **Help Handler**: /help command processing (src/bot_commands/help.py)
+   - **Rus Handler**: /rus command processing for Russian translations (src/bot_commands/rus.py)
+6. **Data Storage**: PostgreSQL database with tables for sentences, phrases, users, and results
 7. **Database Layer**: Modular database operations with separate repositories
-   - **Connection Module**: Database connections, migrations, table counts (src/database/connection.py)
+   - **Connection Module**: Database connections, migrations, table counts, statistics (src/database/connection.py)
    - **User Module**: User profile management operations (src/database/users.py)
    - **Base Module**: Shared utilities, validation, LLM integration (src/database/base.py)
-   - **Sentences Module**: Sentence feature operations (src/database/sentences.py)
+   - **Sentences Module**: Sentence feature operations with Russian translations (src/database/sentences.py)
 8. **User Tracking**: Manages user profiles and access timestamps via get_or_create_user (src/database/users.py)
 9. **Entry Point**: Simple application entry point (src/bot.py)
-10. **Config Manager**: Loads and manages configuration
+10. **Config Manager**: Loads and manages configuration with multi-language support
 
 ### Planned Components
 1. **User Auth**: Handles user authentication and authorization

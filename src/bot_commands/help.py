@@ -48,6 +48,8 @@ Questo esercizio ti presenterà una frase in italiano con le parole mescolate ca
 
 Altri esercizi in arrivo!
 
+Puoi anche usare il comando /rus per ottenere la traduzione in russo del tuo ultimo tentativo.
+
 Inoltre, puoi vedere alcune statistiche con il comando /stats.
 
 In bocca al lupo!"""
