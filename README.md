@@ -2,6 +2,9 @@
 
 A Telegram bot designed to help users learn Italian through interactive word ordering exercises.
 
+[![Python Tests](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml/badge.svg)](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml)
+
+
 ## Features
 
 - **Word Ordering Game**: Reorder scrambled Italian sentences to form correct phrases
@@ -20,7 +23,7 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 
 ### Prerequisites
 
-- Python 3.12 or higher
+- Python 3.12
 - Telegram Bot Token
 
 ### Setup the development environment
