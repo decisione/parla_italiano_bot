@@ -61,7 +61,7 @@ async def test_stats_command_handler():
         assert "Statistiche del Bot" in response_text
         assert "Utenti totali: <b>10</b>" in response_text
         assert "Frasi totali: <b>50</b> (aggiunto automaticamente se necessario)" in response_text
-        assert "Tentativi totali: <b>100</b>" in response_text
+        assert "Tentativi globali: <b>100</b>" in response_text
         assert "Successo globale: <b>75.5%</b>" in response_text
         assert ", personale: <b>80.0%</b>" in response_text
         assert "Statistiche di oggi:" in response_text
@@ -111,7 +111,7 @@ async def test_stats_command_handler_zero_attempts():
         assert "Statistiche del Bot" in response_text
         assert "Utenti totali: <b>5</b>" in response_text
         assert "Frasi totali: <b>25</b> (aggiunto automaticamente se necessario)" in response_text
-        assert "Tentativi totali: <b>0</b>" in response_text
+        assert "Tentativi globali: <b>0</b>" in response_text
         assert "Successo globale: <b>0.0%</b>" in response_text
         assert ", personale: <b>0.0%</b>" in response_text
         assert "Statistiche di oggi:" in response_text

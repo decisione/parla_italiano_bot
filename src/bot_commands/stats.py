@@ -47,10 +47,10 @@ def create_stats_command_handler():
         stats_text = f"""<u>Statistiche del Bot:</u>
 - Utenti totali: <b>{stats['total_users']}</b>
 - Frasi totali: <b>{stats['total_sentences']}</b> (aggiunto automaticamente se necessario)
-- Tentativi totali: <b>{stats['total_attempts']}</b>
+- Tentativi globali: <b>{stats['total_attempts']}</b>
 - Successo globale: <b>{stats['global_success_rate']:.1f}%</b>, personale: <b>{stats['user_success_rate']:.1f}%</b>
 
-Statistiche di oggi:
+<u>Statistiche di oggi:</u>
 - Tentativi globali: <b>{stats['today_global_attempts']}</b>, i tuoi tentativi: <b>{stats['today_user_attempts']}</b>
 - Successo globale: <b>{stats['today_global_success_rate']:.1f}%</b>, personale: <b>{stats['today_user_success_rate']:.1f}%</b>"""
         

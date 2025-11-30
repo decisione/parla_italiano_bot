@@ -14,6 +14,7 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 /start - Avvia il bot
 /help - Spiega cosa fa il bot
 /stats - Mostra alcune statistiche
+/rus - Ottenere la traduzione in russo del tuo ultimo tentativo
 
 ## Installation
 
