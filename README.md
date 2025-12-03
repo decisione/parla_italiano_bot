@@ -2,6 +2,9 @@
 
 A Telegram bot designed to help users learn Italian through interactive word ordering exercises.
 
+[![Python Tests](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml/badge.svg)](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml)
+
+
 ## Features
 
 - **Word Ordering Game**: Reorder scrambled Italian sentences to form correct phrases
@@ -20,7 +23,7 @@ A Telegram bot designed to help users learn Italian through interactive word ord
 
 ### Prerequisites
 
-- Python 3.12 or higher
+- Python 3.12
 - Telegram Bot Token
 
 ### Setup the development environment
@@ -42,10 +45,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the project root:
-```env
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-```
+4. Create a `.env` and `config.ini` files in the project root (see below)
 
 ### Run in the development environment
 
@@ -134,16 +134,6 @@ The configuration is managed through `src/config.py` which provides:
 - Environment variables take precedence over INI file values
 - Validation and error handling for missing required configuration
 
-## Future Development
-
-The project is planned to evolve with the following features:
-
-### Authorization
-- User authorization system
-
-### Stories
-- Stories mode implementation
-
 ## License
 
-All rights reserved.
+(C) Copyright Oleg Skrynnik. CC BY-NC-SA. Free to read, use, fork, and suggest changes; all modifications and derivatives must be licensed identically; commercial use and profit-making are strictly prohibited.
