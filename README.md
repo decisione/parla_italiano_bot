@@ -3,6 +3,8 @@
 A Telegram bot designed to help users learn Italian through interactive word ordering exercises.
 
 [![Python Tests](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml/badge.svg)](https://github.com/decisione/parla_italiano_bot/actions/workflows/pytest.yml)
+[![gitleaks](https://github.com/decisione/parla_italiano_bot/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/decisione/parla_italiano_bot/actions/workflows/gitleaks.yml)
+<img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 
 
 ## Features
