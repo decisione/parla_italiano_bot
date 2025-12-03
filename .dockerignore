@@ -1,0 +1,7 @@
+.kilocode/
+.pytest_cache/
+tests/
+*.tar
+*.sh
+*.jpg
+*.md
