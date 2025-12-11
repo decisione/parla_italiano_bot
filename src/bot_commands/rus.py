@@ -18,27 +18,47 @@ sys.path.insert(0, project_root)
 
 try:
     from src.database import get_or_create_user, get_last_attempted_sentence
+    from src.state.learning_state import LearningState
 except ImportError:
     # Fallback for Docker environment
     from database import get_or_create_user, get_last_attempted_sentence
+    from state.learning_state import LearningState
 
 
-def create_rus_command_handler():
+def create_rus_command_handler(learning_state: LearningState, bot):
     """
     Create a Russian translation command handler.
-    
+
+    Args:
+        learning_state: LearningState instance for managing user progress
+        bot: Bot instance for deleting messages
+
     Returns:
         Async function that handles the /rus command
     """
     async def rus_command_handler(message: Message) -> None:
         """
         Handle the /rus command.
-        
+
         Args:
             message: Telegram message object
         """
         user_id = message.from_user.id
         await get_or_create_user(message.from_user)
+
+        # Get the message ID of the current exercise (if any)
+        exercise_message_id = learning_state.get_message_id(user_id)
+
+        # Clear the current exercise state when user requests translation
+        learning_state.clear_user_state(user_id)
+
+        # Delete the previous exercise message if it exists
+        if exercise_message_id:
+            try:
+                await bot.delete_message(chat_id=message.chat.id, message_id=exercise_message_id)
+            except Exception:
+                # Ignore errors if message doesn't exist or can't be deleted
+                pass
         
         # Get the last attempted sentence for this user
         last_sentence = await get_last_attempted_sentence(user_id)

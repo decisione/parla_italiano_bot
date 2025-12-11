@@ -81,7 +81,7 @@ class ParlaItalianoBot:
         self.router.message(Command("stats"))(stats_handler)
         
         # Create and register /rus command handler
-        rus_handler = create_rus_command_handler()
+        rus_handler = create_rus_command_handler(self.learning_state, self.bot)
         self.router.message(Command("rus"))(rus_handler)
     
     def _setup_callback_handlers(self) -> None:

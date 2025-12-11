@@ -115,16 +115,20 @@ class SentenceOrderingExercise:
         if hasattr(message_or_callback, 'message'):
             # It's a callback query
             await message_or_callback.answer()
-            await message_or_callback.message.edit_text(
+            sent_message = await message_or_callback.message.edit_text(
                 message_text,
                 reply_markup=keyboard
             )
+            # Store the message ID for the callback case
+            self.learning_state.set_message_id(user_id, sent_message.message_id)
         else:
             # It's a message
-            await message_or_callback.answer(
+            sent_message = await message_or_callback.answer(
                 message_text,
                 reply_markup=keyboard
             )
+            # Store the message ID for the message case
+            self.learning_state.set_message_id(user_id, sent_message.message_id)
     
     async def handle_word_selection(self, callback: CallbackQuery) -> None:
         """

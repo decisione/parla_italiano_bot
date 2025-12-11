@@ -169,12 +169,37 @@ class LearningState:
     def get_all_user_ids(self) -> List[int]:
         """
         Get all user IDs that have active learning states.
-        
+
         Returns:
             List of user IDs
         """
         return list(self._user_states.keys())
-    
+
+    def get_message_id(self, user_id: int) -> Optional[int]:
+        """
+        Get the message ID for the user's current exercise.
+
+        Args:
+            user_id: Telegram user ID
+
+        Returns:
+            Message ID or None if no state exists or no message ID stored
+        """
+        state = self.get_user_state(user_id)
+        return state.get('message_id') if state else None
+
+    def set_message_id(self, user_id: int, message_id: int) -> None:
+        """
+        Set the message ID for the user's current exercise.
+
+        Args:
+            user_id: Telegram user ID
+            message_id: Telegram message ID
+        """
+        state = self.get_user_state(user_id)
+        if state:
+            state['message_id'] = message_id
+
     def cleanup_expired_states(self) -> None:
         """
         Clean up any expired or invalid states.

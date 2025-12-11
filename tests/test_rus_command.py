@@ -35,7 +35,10 @@ async def test_rus_command_with_translation(mock_get_last, mock_get_or_create):
     mock_message.answer = AsyncMock()
     
     # Create handler and test
-    handler = create_rus_command_handler()
+    from src.state.learning_state import LearningState
+    learning_state = LearningState()
+    mock_bot = AsyncMock()
+    handler = create_rus_command_handler(learning_state, mock_bot)
     await handler(mock_message)
     
     # Verify
@@ -69,7 +72,10 @@ async def test_rus_command_no_translation(mock_get_last, mock_get_or_create):
     mock_message.answer = AsyncMock()
     
     # Create handler and test
-    handler = create_rus_command_handler()
+    from src.state.learning_state import LearningState
+    learning_state = LearningState()
+    mock_bot = AsyncMock()
+    handler = create_rus_command_handler(learning_state, mock_bot)
     await handler(mock_message)
     
     # Verify
@@ -100,7 +106,10 @@ async def test_rus_command_no_sentences(mock_get_last, mock_get_or_create):
     mock_message.answer = AsyncMock()
     
     # Create handler and test
-    handler = create_rus_command_handler()
+    from src.state.learning_state import LearningState
+    learning_state = LearningState()
+    mock_bot = AsyncMock()
+    handler = create_rus_command_handler(learning_state, mock_bot)
     await handler(mock_message)
     
     # Verify
@@ -131,7 +140,10 @@ async def test_rus_command_user_creation(mock_get_last, mock_get_or_create):
     mock_message.answer = AsyncMock()
     
     # Create handler and test
-    handler = create_rus_command_handler()
+    from src.state.learning_state import LearningState
+    learning_state = LearningState()
+    mock_bot = AsyncMock()
+    handler = create_rus_command_handler(learning_state, mock_bot)
     await handler(mock_message)
     
     # Verify user creation is called
