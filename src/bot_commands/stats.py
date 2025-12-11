@@ -44,9 +44,12 @@ def create_stats_command_handler():
         stats = await get_stats_data(user_id)
         
         # Format statistics in Italian
-        stats_text = f"""<u>Statistiche del Bot:</u>
+        stats_text = f"""
+<u>Statistiche del Bot:</u>
 - Utenti totali: <b>{stats['total_users']}</b>
 - Frasi totali: <b>{stats['total_sentences']}</b> (aggiunto automaticamente se necessario)
+
+<u>Statistiche di tutti i tempi:</u>
 - Tentativi globali: <b>{stats['total_attempts']}</b>
 - Successo globale: <b>{stats['global_success_rate']:.1f}%</b>, personale: <b>{stats['user_success_rate']:.1f}%</b>
 
