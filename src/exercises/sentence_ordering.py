@@ -23,6 +23,7 @@ try:
         get_random_sentence,
         get_random_encouraging_phrase,
         get_random_error_phrase,
+        get_random_exercise_prompt,
         store_sentence_result,
         get_or_create_user
     )
@@ -32,6 +33,7 @@ except ImportError:
         get_random_sentence,
         get_random_encouraging_phrase,
         get_random_error_phrase,
+        get_random_exercise_prompt,
         store_sentence_result,
         get_or_create_user
     )
@@ -110,7 +112,7 @@ class SentenceOrderingExercise:
         keyboard = self.create_word_buttons(words)
         
         # Send exercise prompt
-        message_text = "Disponi queste parole per formare la frase italiana corretta:"
+        message_text = await get_random_exercise_prompt()
         
         if hasattr(message_or_callback, 'message'):
             # It's a callback query
@@ -246,8 +248,7 @@ class SentenceOrderingExercise:
         remaining_count = len(self.learning_state.get_current_sentence_words(user_id)) - len(self.learning_state.get_selected_words(user_id))
         
         await callback.message.edit_text(
-            f"Selezione corrente: {selected_sentence}\n"
-            f"Parole rimanenti: {remaining_count}",
+            f"> {selected_sentence}...",
             reply_markup=keyboard
         )
         await callback.answer()

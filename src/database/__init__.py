@@ -16,7 +16,8 @@ from .sentences import (
     get_random_sentence,
     store_sentence_result,
     get_random_encouraging_phrase,
-    get_random_error_phrase
+    get_random_error_phrase,
+    get_random_exercise_prompt
 )
 
 # Re-export the SentenceList model for backward compatibility
@@ -40,7 +41,7 @@ __all__ = [
     'store_sentence_result',
     'get_random_encouraging_phrase',
     'get_random_error_phrase',
-    
+    'get_random_exercise_prompt',
     # Models
     'SentenceList',
     

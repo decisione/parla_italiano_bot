@@ -8,7 +8,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from aiogram.types import User
-from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result, get_stats_data
+from src.database import get_or_create_user, get_table_counts, get_random_sentence, store_sentence_result, get_stats_data, get_random_exercise_prompt
 from src.database.base import is_valid_italian_sentence
 
 @pytest.fixture(scope="session")
@@ -282,3 +282,29 @@ async def test_get_stats_data_zero_attempts(mock_connect):
     assert stats['today_global_success_rate'] == 0.0
     assert stats['today_user_attempts'] == 0
     assert stats['today_user_success_rate'] == 0.0
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_random_exercise_prompt(mock_connect):
+    """Test get_random_exercise_prompt returns a random prompt."""
+    mock_conn = AsyncMock()
+    mock_conn.fetchrow.return_value = {'prompt': 'Prova a ordinare queste parole:'}
+    mock_connect.return_value = mock_conn
+
+    result = await get_random_exercise_prompt()
+    assert result == 'Prova a ordinare queste parole:'
+    mock_conn.fetchrow.assert_called_once_with("SELECT prompt FROM exercise_prompts ORDER BY RANDOM() LIMIT 1")
+    mock_conn.close.assert_called_once()
+
+@pytest.mark.asyncio
+@patch('src.database.asyncpg.connect')
+async def test_get_random_exercise_prompt_fallback(mock_connect):
+    """Test get_random_exercise_prompt returns fallback when no prompts available."""
+    mock_conn = AsyncMock()
+    mock_conn.fetchrow.return_value = None  # No prompts in database
+    mock_connect.return_value = mock_conn
+
+    result = await get_random_exercise_prompt()
+    assert result == "Prossimo!"  # fallback
+    mock_conn.fetchrow.assert_called_once_with("SELECT prompt FROM exercise_prompts ORDER BY RANDOM() LIMIT 1")
+    mock_conn.close.assert_called_once()

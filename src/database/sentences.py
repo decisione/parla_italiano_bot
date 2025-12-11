@@ -145,6 +145,19 @@ async def get_random_error_phrase() -> str:
     finally:
         await conn.close()
 
+async def get_random_exercise_prompt() -> str:
+    """Get a random exercise prompt from the database"""
+    db_config = get_database_config()
+    conn = await asyncpg.connect(
+        host=db_config.host, port=db_config.port, database=db_config.name,
+        user=db_config.user, password=db_config.password
+    )
+    try:
+        row = await conn.fetchrow("SELECT prompt FROM exercise_prompts ORDER BY RANDOM() LIMIT 1")
+        return row['prompt'] if row else "Prossimo!"  # fallback
+    finally:
+        await conn.close()
+
 
 async def sentence_replenishment(user_id: int) -> None:
     """Generate Italian sentences with Russian translations using OpenAI API and store them in the database"""
