@@ -20,7 +20,7 @@ load_dotenv()
 
 # Configuration
 API_URL = "https://openrouter.ai/api/v1"
-API_KEY = os.getenv("API_KEY")
+LLM_API_KEY = os.getenv("LLM_API_KEY")
 MODEL_NAME = "qwen/qwen3-235b-a22b:free"
 
 # Italian character set including accented vowels
@@ -64,7 +64,7 @@ async def generate_sentences() -> List[str]:
     """Generate Italian sentences using OpenAI with structured output"""
     
     # Initialize OpenAI client with instructor patch
-    client = instructor.patch(OpenAI(base_url=API_URL, api_key=API_KEY))
+    client = instructor.patch(OpenAI(base_url=API_URL, api_key=LLM_API_KEY))
     
     # System prompt to guide the LLM
     system_prompt = """Generate Italian sentences for language learning. 
@@ -132,12 +132,12 @@ async def main():
     print("=" * 60)
     
     # Check API key
-    if not API_KEY:
-        print("ERROR: API_KEY not found in environment variables!")
-        print("Please set API_KEY in your .env file")
+    if not LLM_API_KEY:
+        print("ERROR: LLM_API_KEY not found in environment variables!")
+        print("Please set LLM_API_KEY in your .env file")
         return
     
-    print(f"API Key loaded: {'Yes' if API_KEY else 'No'}")
+    print(f"API Key loaded: {'Yes' if LLM_API_KEY else 'No'}")
     print()
     
     # Generate sentences

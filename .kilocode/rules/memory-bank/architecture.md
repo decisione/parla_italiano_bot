@@ -109,3 +109,30 @@ parla_italiano_bot/
 1. **User Auth**: Handles user authentication and authorization
 2. **Content Manager**: Manages sentences and stories
 3. **Additional Exercise Modules**: Expandable system for new learning activities
+
+
+## Current Database Schema
+
+1. **`italian_sentences`** table:
+   - `id` (SERIAL PRIMARY KEY)
+   - `sentence` (TEXT NOT NULL) - Italian sentence text
+   - `sentence_rus` (TEXT NOT NULL) - Russian translation
+
+2. **`encouraging_phrases`** table:
+   - `id` (SERIAL PRIMARY KEY)
+   - `phrase` (TEXT NOT NULL)
+
+3. **`error_phrases`** table:
+   - `id` (SERIAL PRIMARY KEY)
+   - `phrase` (TEXT NOT NULL)
+
+4. **`users`** table:
+   - `user_id` (BIGINT PRIMARY KEY)
+   - Profile and access tracking fields
+
+5. **`italian_sentences_results`** table:
+   - `id` (SERIAL PRIMARY KEY)
+   - `user_id` (BIGINT REFERENCES users)
+   - `italian_sentence_id` (INT REFERENCES italian_sentences)
+   - `is_success` (BOOLEAN)
+   - `timestamp` (TIMESTAMPTZ)
