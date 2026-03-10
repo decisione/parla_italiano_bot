@@ -22,7 +22,7 @@ load_dotenv()
 # Configuration
 API_URL = "https://openrouter.ai/api/v1"
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-MODEL_NAME = "z-ai/glm-4.5-air:free"
+MODEL_NAME = "openai/gpt-oss-120b:free"
 
 INPUT_CSV_PATH = "italian_sentences.csv"
 OUTPUT_CSV_PATH = "italian_sentences_updated.csv"
@@ -59,7 +59,7 @@ def validate_missing_word_data(sentence: str, word_to_replace: str, suggestions:
     if sentence_words.count(target) != 1:
         return False
 
-    if not (2 <= len(suggestions) <= 4):
+    if not (2 <= len(suggestions) <= 5):
         return False
 
     normalized_suggestions = [normalize_word(s) for s in suggestions]
@@ -82,14 +82,14 @@ def validate_missing_word_data(sentence: str, word_to_replace: str, suggestions:
     return True
 
 
-async def generate_missing_word_data(client: OpenAI, sentence: str) -> MissingWordResult:
+def generate_missing_word_data(client: OpenAI, sentence: str) -> MissingWordResult:
     system_prompt = """You are generating missing word exercise data for Italian sentences.
-Given the Italian sentence, select a single target word to replace and propose 2 to 4 alternative words.
+Given the Italian sentence, select a single target word to replace and propose 2 to 5 alternative words.
 
 Rules:
 - The target word must appear exactly once in the sentence.
 - The target word must be a single word (no spaces).
-- Provide 2 to 4 alternative words in Italian.
+- Provide 2 to 5 alternative words in Italian.
 - Alternatives must be unique, not present in the original sentence, and not equal to the target word.
 - When any of alternative words put into sentence instead of target word, the sentence must become gramatically incorrect or absurd
 - Output only valid JSON with keys: word_to_replace (string) and word_suggestions (array of strings).
@@ -138,50 +138,54 @@ async def main() -> None:
         print("No rows found in input CSV.")
         return
 
-    output_rows = []
-    for index, row in enumerate(rows[:3], start=1):
+    semaphore = asyncio.Semaphore(16)
+
+    async def process_row(index: int, row: dict) -> dict:
         sentence_id = row.get("id", "").strip()
         sentence = row.get("sentence", "").strip()
 
         if not sentence_id or not sentence:
             print(f"Skipping row {index}: missing id or sentence")
-            output_rows.append({
-                "id": sentence_id,
-                "word_to_replace": "",
-                "word_suggestions": ""
-            })
-            continue
-
-        print(f"Processing sentence {index}/{len(rows)} (id={sentence_id})")
-
-        try:
-            result = await generate_missing_word_data(client, sentence)
-            word_to_replace = result.word_to_replace.strip()
-            suggestions = [s.strip() for s in result.word_suggestions]
-
-            if validate_missing_word_data(sentence, word_to_replace, suggestions):
-                output_rows.append({
-                    "id": sentence_id,
-                    "sentence": sentence,
-                    "word_to_replace": word_to_replace,
-                    "word_suggestions": ",".join(suggestions)
-                })
-            else:
-                print(f"Invalid data for id={sentence_id}: '{word_to_replace}' | {suggestions}")
-                output_rows.append({
-                    "id": sentence_id,
-                    "sentence": sentence,
-                    "word_to_replace": "",
-                    "word_suggestions": ""
-                })
-        except Exception as exc:
-            print(f"Error processing id={sentence_id}: {exc}")
-            output_rows.append({
+            return {
                 "id": sentence_id,
                 "sentence": sentence,
                 "word_to_replace": "",
                 "word_suggestions": ""
-            })
+            }
+
+        print(f"Processing sentence {index}/{len(rows)} (id={sentence_id})")
+
+        async with semaphore:
+            try:
+                result = await asyncio.to_thread(generate_missing_word_data, client, sentence)
+                word_to_replace = result.word_to_replace.strip()
+                suggestions = [s.strip() for s in result.word_suggestions]
+
+                if validate_missing_word_data(sentence, word_to_replace, suggestions):
+                    return {
+                        "id": sentence_id,
+                        "sentence": sentence,
+                        "word_to_replace": word_to_replace,
+                        "word_suggestions": ",".join(suggestions)
+                    }
+                print(f"Invalid data for id={sentence_id}: '{word_to_replace}' | {suggestions}")
+                return {
+                    "id": sentence_id,
+                    "sentence": sentence,
+                    "word_to_replace": "",
+                    "word_suggestions": ""
+                }
+            except Exception as exc:
+                print(f"Error processing id={sentence_id}: {exc}")
+                return {
+                    "id": sentence_id,
+                    "sentence": sentence,
+                    "word_to_replace": "",
+                    "word_suggestions": ""
+                }
+
+    tasks = [process_row(index, row) for index, row in enumerate(rows[:15], start=1)]
+    output_rows = await asyncio.gather(*tasks)
 
     with open(OUTPUT_CSV_PATH, "w", newline="", encoding="utf-8") as output_file:
         fieldnames = ["id", "sentence", "word_to_replace", "word_suggestions"]
