@@ -10,6 +10,7 @@ import csv
 import re
 import asyncio
 import time
+from collections import deque
 from typing import List
 
 import pydantic
@@ -46,6 +47,11 @@ def extract_words(sentence: str) -> List[str]:
     return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ']+", sentence.lower())
 
 
+def strip_elision(word: str) -> str:
+    parts = word.split("'", 1)
+    return parts[1] if len(parts) == 2 else ""
+
+
 def is_valid_italian_text(text: str) -> bool:
     for char in text.lower():
         if char not in ITALIAN_CHARACTERS:
@@ -56,9 +62,17 @@ def is_valid_italian_text(text: str) -> bool:
 def validate_missing_word_data(sentence: str, word_to_replace: str, suggestions: List[str]) -> bool:
     sentence_words = extract_words(sentence)
     target = normalize_word(word_to_replace)
-    if not target or target not in sentence_words:
+    sentence_normalized = [normalize_word(w) for w in sentence_words]
+    sentence_stripped = [strip_elision(w) for w in sentence_normalized]
+    if not target or (target not in sentence_normalized and target not in sentence_stripped):
         return False
-    if sentence_words.count(target) != 1:
+    target_matches = 0
+    for original, stripped in zip(sentence_normalized, sentence_stripped):
+        if original == target:
+            target_matches += 1
+        elif stripped and stripped == target:
+            target_matches += 1
+    if target_matches != 1:
         return False
 
     if not (2 <= len(suggestions) <= 5):
@@ -75,7 +89,10 @@ def validate_missing_word_data(sentence: str, word_to_replace: str, suggestions:
         if not suggestion.strip() or not is_valid_italian_text(suggestion):
             return False
 
-    if any(suggestion in sentence_words for suggestion in normalized_suggestions):
+    if any(
+        suggestion in sentence_normalized or suggestion in sentence_stripped
+        for suggestion in normalized_suggestions
+    ):
         return False
 
     if not is_valid_italian_text(word_to_replace):
@@ -84,8 +101,9 @@ def validate_missing_word_data(sentence: str, word_to_replace: str, suggestions:
     return True
 
 
-def generate_missing_word_data(client: OpenAI, sentence: str) -> MissingWordResult:
-    system_prompt = """You are generating missing word exercise data for Italian sentences.
+def generate_missing_word_data(client: OpenAI, sentence: str, recent_suggestions: List[str]) -> MissingWordResult:
+    recent_text = ", ".join(recent_suggestions)
+    system_prompt = f"""You are generating missing word exercise data for Italian sentences.
 Given the Italian sentence, select a single target word to replace and propose 2 to 5 alternative words.
 
 Rules:
@@ -95,9 +113,13 @@ Rules:
 - Provide 2 to 5 alternative words in Italian.
 - Alternatives must be unique, not present in the original sentence, and not equal to the target word.
 - An alternative word can be any part of speech: a noun, an adjective, a verb, and so on.
-- **Important validation**: If any of the alternative words are inserted into a sentence instead of the target word, the sentence MUST become grammatically incorrect or absurd.
+- **Important validation**: If any of the alternative words are inserted into a sentence instead of the target word, the sentence MUST become grammatically incorrect, absurd, or illogical.
+- Avoid using any of these recent suggestions: {recent_text}
 - Output only valid JSON with keys: word_to_replace (string) and word_suggestions (array of strings).
 """
+
+#    print("\nSentence:", sentence)
+#    print("recent_text:", recent_text)
 
     last_error = None
     for attempt in range(1, 8):
@@ -152,7 +174,9 @@ async def main() -> None:
         print("No rows found in input CSV.")
         return
 
-    semaphore = asyncio.Semaphore(4)
+    semaphore = asyncio.Semaphore(2)
+    recent_suggestions = deque(maxlen=100)
+    recent_lock = asyncio.Lock()
 
     async def process_row(index: int, row: dict) -> dict:
         sentence_id = row.get("id", "").strip()
@@ -171,9 +195,20 @@ async def main() -> None:
 
         async with semaphore:
             try:
-                result = await asyncio.to_thread(generate_missing_word_data, client, sentence)
+                async with recent_lock:
+                    recent_snapshot = list(recent_suggestions)
+                result = await asyncio.to_thread(
+                    generate_missing_word_data,
+                    client,
+                    sentence,
+                    recent_snapshot
+                )
                 word_to_replace = result.word_to_replace.strip()
                 suggestions = [s.strip() for s in result.word_suggestions]
+
+                async with recent_lock:
+                    for suggestion in suggestions:
+                        recent_suggestions.append(suggestion)
 
                 if validate_missing_word_data(sentence, word_to_replace, suggestions):
                     return {
