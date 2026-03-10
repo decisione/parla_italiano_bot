@@ -174,8 +174,9 @@ async def main() -> None:
         print("No rows found in input CSV.")
         return
 
-    semaphore = asyncio.Semaphore(2)
-    recent_suggestions = deque(maxlen=100)
+    semaphore = asyncio.Semaphore(4)
+    recent_suggestions = deque(maxlen=200)
+    recent_set = set()
     recent_lock = asyncio.Lock()
 
     async def process_row(index: int, row: dict) -> dict:
@@ -191,10 +192,9 @@ async def main() -> None:
                 "word_suggestions": ""
             }
 
-        print(f"Processing sentence {index}/{len(rows)} (id={sentence_id})")
-
         async with semaphore:
             try:
+                print(f"Processing sentence {index}/{len(rows)} (id={sentence_id})")
                 async with recent_lock:
                     recent_snapshot = list(recent_suggestions)
                 result = await asyncio.to_thread(
@@ -208,7 +208,14 @@ async def main() -> None:
 
                 async with recent_lock:
                     for suggestion in suggestions:
+                        normalized = normalize_word(suggestion)
+                        if normalized in recent_set:
+                            continue
                         recent_suggestions.append(suggestion)
+                        recent_set.add(normalized)
+                        while len(recent_set) > len(recent_suggestions):
+                            removed = recent_suggestions[0]
+                            recent_set.discard(normalize_word(removed))
 
                 if validate_missing_word_data(sentence, word_to_replace, suggestions):
                     return {
@@ -233,7 +240,7 @@ async def main() -> None:
                     "word_suggestions": ""
                 }
 
-    tasks = [process_row(index, row) for index, row in enumerate(rows[:15], start=1)]
+    tasks = [process_row(index, row) for index, row in enumerate(rows, start=1)]
     output_rows = await asyncio.gather(*tasks)
 
     with open(OUTPUT_CSV_PATH, "w", newline="", encoding="utf-8") as output_file:
