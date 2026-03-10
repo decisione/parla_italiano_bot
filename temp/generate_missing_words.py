@@ -9,9 +9,11 @@ import os
 import csv
 import re
 import asyncio
+import time
 from typing import List
 
 import pydantic
+from openai import OpenAIError
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -22,7 +24,7 @@ load_dotenv()
 # Configuration
 API_URL = "https://openrouter.ai/api/v1"
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-MODEL_NAME = "openai/gpt-oss-120b:free"
+MODEL_NAME = "qwen/qwen3-235b-a22b-2507"
 
 INPUT_CSV_PATH = "italian_sentences.csv"
 OUTPUT_CSV_PATH = "italian_sentences_updated.csv"
@@ -87,31 +89,43 @@ def generate_missing_word_data(client: OpenAI, sentence: str) -> MissingWordResu
 Given the Italian sentence, select a single target word to replace and propose 2 to 5 alternative words.
 
 Rules:
+- The target word must be in Italian.
 - The target word must appear exactly once in the sentence.
 - The target word must be a single word (no spaces).
 - Provide 2 to 5 alternative words in Italian.
 - Alternatives must be unique, not present in the original sentence, and not equal to the target word.
-- When any of alternative words put into sentence instead of target word, the sentence must become gramatically incorrect or absurd
+- An alternative word can be any part of speech: a noun, an adjective, a verb, and so on.
+- **Important validation**: If any of the alternative words are inserted into a sentence instead of the target word, the sentence MUST become grammatically incorrect or absurd.
 - Output only valid JSON with keys: word_to_replace (string) and word_suggestions (array of strings).
-
-Examples:
-- For sentence 'Buongiorno a tutti' the target word might be 'Buongiorno', bad alternatives would be 'Buonasera, Ciao, Salve', good alternatives would be 'Locomotiva, Passeggiata, Morso'
-- For sentence 'Mi piace la pizza' the target word might be 'pizza', bad alternatives would be 'pasta, lasagna, mela, pera', good alternatives would be 'tavolo, volare, Parigi, ieri'
 """
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        tool_choice="auto",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Sentence: {sentence}"}
-        ]
-    )
+    last_error = None
+    for attempt in range(1, 8):
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                tool_choice="auto",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Sentence: {sentence}"}
+                ]
+            )
+            content = response.choices[0].message.content or ""
+            content = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.IGNORECASE)
+            content = re.sub(r"```$", "", content.strip())
+            return MissingWordResult.model_validate_json(content)
+        except OpenAIError as exc:
+            status_code = getattr(exc, "status_code", None)
+            if status_code == 429 and attempt < 8:
+                backoff = 2 ** (attempt - 1)
+                print(f"Rate limited (429). Retry {attempt} after {backoff}s")
+                time.sleep(backoff)
+                last_error = exc
+                continue
+            raise
 
-    content = response.choices[0].message.content or ""
-    content = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.IGNORECASE)
-    content = re.sub(r"```$", "", content.strip())
-    return MissingWordResult.model_validate_json(content)
+    if last_error:
+        raise last_error
 
 
 async def main() -> None:
@@ -138,7 +152,7 @@ async def main() -> None:
         print("No rows found in input CSV.")
         return
 
-    semaphore = asyncio.Semaphore(16)
+    semaphore = asyncio.Semaphore(4)
 
     async def process_row(index: int, row: dict) -> dict:
         sentence_id = row.get("id", "").strip()
