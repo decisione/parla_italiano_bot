@@ -23,7 +23,15 @@ This document outlines the implementation plan for adding a new "missing word" e
 - LLM generates sentences with missing word data during replenishment
 - When less than 10 unsolved sentences remain for EITHER exercise, generate 25 new sentences
 - Include word_to_replace and word_suggestions for each generated sentence
-- Validate LLM generated content for number of words (2-4 options), generated words must be in Italian, must not have duplicates, must not be present in the original sentence
+- Validate LLM generated content
+
+### Generation and Validation Rules
+- Only one word from the original phrase will be replaced
+- This word must be unique in the phrase (not to confuse the user)
+- 2-4 alternative word options should be generated
+- generated alternative words must be in Italian
+- generated alternative words must be unique and must not have duplicates
+- generated alternative words must not be present in the original sentence
 
 ### User Experience
 - Use inline keyboard buttons for answer selection (like sentence ordering)
@@ -46,7 +54,12 @@ This document outlines the implementation plan for adding a new "missing word" e
 **Objective**: Add database schema changes for missing word functionality
 
 **Tasks**:
-1. Create migration `004_missing_word.sql`:
+1. Create a script `temp/generate_missing_words.py` to update existing sentences in `italian_sentences` table by means of LLM similar to `temp/generate_italian_sentences.py`:
+   - Reads `italian_sentences.csv` (`id`, `sentence`) with current contents of the table
+   - Runs LLM requests for each line to select `word_to_replace` and generate `word_suggestions`
+   - Store the results to `italian_sentences_updated.csv` (`id`, `word_to_replace`, `word_suggestions`)
+
+2. Create migration `006_missing_word.sql`:
    - Add `word_to_replace` column to `italian_sentences` table
    - Add `word_suggestions` column to `italian_sentences` table (comma-separated string)
    - Add constraints: both columns are NOT NULL with empty string defaults
@@ -57,13 +70,11 @@ This document outlines the implementation plan for adding a new "missing word" e
      - `italian_sentence_id` (INT NOT NULL REFERENCES italian_sentences)
      - `is_success` (BOOLEAN NOT NULL)
      - `timestamp` (TIMESTAMPTZ NOT NULL DEFAULT NOW())
-   - Create indexes for performance (user_id, sentence_id, composite index)
-
-2. Create a script `temp/generate_missing_words.py` to update existing sentences in `italian_sentences` table by means of LLM similar to `temp/generate_italian_sentences.py`.
+   - Create indexes in `missing_word_results` for performance (user_id, sentence_id, composite index)
 
 **Deliverables**:
-- `migrations/004_missing_word_columns.sql`
 - `temp/generate_missing_words.py`
+- `migrations/006_missing_word.sql`
 
 ### Phase 2: Content Generation Updates
 **Objective**: Update sentence replenishment to generate missing word data
@@ -77,9 +88,8 @@ This document outlines the implementation plan for adding a new "missing word" e
 2. Update LLM prompt and structured output for missing word generation:
    - Generate 25 Italian sentences (3-10 words, various topics)
    - For each sentence, specify:
-     - `word_to_replace`: The target word to remove
-     - `word_suggestions`: 2-5 comma-separated alternatives (correct + wrong answers)
-   - Ensure suggestions are 2 to 4 words, must be in Italian, must not have duplicates, must not be present in the original sentence except for the word_to_replace
+     - `word_to_replace`: the target word to remove
+     - `word_suggestions`: comma-separated alternatives
    - Use structured output to ensure data consistency
 
 3. Update database functions:
@@ -190,7 +200,7 @@ CREATE INDEX idx_missing_word_results_user_sentence_time ON missing_word_results
 class MissingWordSentence(BaseModel):
     sentence: str
     word_to_replace: str
-    word_suggestions: List[str]  # 2-4 items, first is correct
+    word_suggestions: List[str]  # 2-4 items
 
 class MissingWordSentenceList(BaseModel):
     sentences: List[MissingWordSentence]
@@ -215,18 +225,6 @@ class MissingWordSentenceList(BaseModel):
 - LLM response parsing and validation
 - Sentence selection logic
 - Result storage functionality
-
-### Integration Tests
-- Complete exercise flow from start to finish
-- Statistics calculation and display
-- Database migration scripts
-- Error handling scenarios
-
-### User Acceptance Testing
-- Test with actual users for UI/UX feedback
-- Verify LLM-generated content quality
-- Validate exercise difficulty and engagement
-- Confirm statistics accuracy
 
 ## Success Criteria
 

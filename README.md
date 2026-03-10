@@ -105,7 +105,6 @@ Sensitive configuration parameters should be stored in a `.env` file:
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 DB_PASSWORD=your_database_password
 LLM_API_KEY=your_openai_api_key
-LOG_DIR=/path/to/logs
 ```
 
 ### Configuration File (config.ini)
